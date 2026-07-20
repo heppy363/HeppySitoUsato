@@ -107,13 +107,13 @@ IN SVILUPPO
 ## Fase Corrente
 
 ```text
-Proxy provider del network layer centrale
+Contratto comune MarketplaceProvider
 ```
 
 ## Percentuale Indicativa
 
 ```text
-32%
+36%
 ```
 
 La percentuale è indicativa e non deve essere calcolata esclusivamente sul numero di file creati.
@@ -125,13 +125,13 @@ Deve riflettere il completamento reale delle macro aree previste nella roadmap.
 ```text
 Data: 2026-07-20
 Responsabile: Codex
-Attivita: Integrazione di ProxyProvider e strategie proxy tipizzate nel network layer
+Attivita: Definizione del contratto comune MarketplaceProvider
 ```
 
 ## Prossimo Passo Approvato
 
 ```text
-Definire l'interfaccia comune MarketplaceProvider.
+Completare il modello normalizzato condiviso `SearchResult` e i relativi test di validazione.
 ```
 
 Codex non deve iniziare automaticamente attività successive oltre il prossimo passo approvato.
@@ -143,9 +143,9 @@ Codex non deve iniziare automaticamente attività successive oltre il prossimo p
 | Macro Area              | Stato        | Avanzamento | Note                              |
 | ----------------------- | ------------ | ----------: | --------------------------------- |
 | Infrastruttura e Docker | IN SVILUPPO  |         45% | Dockerfile backend/frontend allineati, avvio stack da completare |
-| Configurazione Backend  | IN SVILUPPO  |         80% | Poetry, lockfile, struttura FastAPI, test backend e settings di rete con strategie proxy tipizzate |
+| Configurazione Backend  | IN SVILUPPO  |         84% | Poetry, lockfile, struttura FastAPI, contratti backend condivisi e settings di rete con strategie proxy tipizzate |
 | Network Layer           | IN SVILUPPO  |         75% | Client condiviso, configurazione proxy astratta e test mockati presenti; restano da definire i contratti marketplace |
-| Marketplace Provider    | NON INIZIATO |          0% | Nessun provider implementato      |
+| Marketplace Provider    | IN SVILUPPO  |         25% | Contratto comune, modelli e mapping errori introdotti; nessun provider concreto ancora presente |
 | Aggregation Engine      | NON INIZIATO |          0% | Nessuna logica di aggregazione    |
 | Cache Redis             | NON INIZIATO |          0% | Solo servizio Docker, cache applicativa assente |
 | PostgreSQL e Migrazioni | NON INIZIATO |          0% | Solo servizio Docker, ORM e Alembic assenti |
@@ -156,10 +156,10 @@ Codex non deve iniziare automaticamente attività successive oltre il prossimo p
 | State Management        | IN SVILUPPO  |         15% | Pinia configurato con store iniziale |
 | Server State            | IN SVILUPPO  |         15% | TanStack Query configurato con query client base |
 | Interfaccia Grafica     | IN SVILUPPO  |         10% | Shell UI iniziale presente, feature di ricerca assenti |
-| Testing                 | IN SVILUPPO  |         30% | Test backend e network layer con MockTransport; copertura proxy ora inclusa ma ancora minima |
+| Testing                 | IN SVILUPPO  |         35% | Test backend, network layer e contratto provider presenti; copertura applicativa ancora minima |
 | Monitoring              | IN SVILUPPO  |         10% | Servizi base presenti, metriche e dashboard da implementare |
 | Sicurezza               | NON INIZIATO |          0% | Controlli non implementati        |
-| Documentazione          | IN SVILUPPO  |         95% | Documenti principali verificati e progresso aggiornato |
+| Documentazione          | IN SVILUPPO  |         96% | Documenti principali verificati e progresso aggiornato |
 
 ---
 
@@ -349,20 +349,30 @@ Non devono essere implementate tecniche per superare autenticazione, CAPTCHA, pa
 
 ## Interfaccia Comune
 
-**Stato:** `NON INIZIATO`
+**Stato:** `COMPLETATO`
 
 #### Requisiti
 
-* [ ] Definire `MarketplaceProvider`
-* [ ] Definire metodo asincrono `search`
-* [ ] Definire modelli di input
-* [ ] Definire modelli di output
-* [ ] Definire eccezioni comuni
-* [ ] Definire stato del provider
-* [ ] Definire timeout specifico
-* [ ] Definire normalizzazione
-* [ ] Definire mapping degli errori
-* [ ] Aggiungere test del contratto
+* [x] Definire `MarketplaceProvider`
+* [x] Definire metodo asincrono `search`
+* [x] Definire modelli di input
+* [x] Definire modelli di output
+* [x] Definire eccezioni comuni
+* [x] Definire stato del provider
+* [x] Definire timeout specifico
+* [x] Definire normalizzazione
+* [x] Definire mapping degli errori
+* [x] Aggiungere test del contratto
+
+#### Evidenze
+
+```text
+File creati: `backend/app/providers/base.py`, `backend/app/providers/models.py`, `backend/app/providers/exceptions.py`, `backend/tests/test_providers.py`
+File modificati: `backend/app/providers/__init__.py`, `backend/README.md`
+Contratti introdotti: `MarketplaceProvider`, `SearchRequest`, `SearchResult`, `ProviderMetadata`, `ProviderStatus` e gerarchia `ProviderError`
+Coperture incluse: metodo asincrono `search`, normalizzazione, validazione provider, timeout specifico via `TimeoutSettings`, mapping degli errori di rete e test del contratto con provider dummy
+Verifiche riuscite: `poetry check`, `poetry run pytest tests/test_app.py tests/test_network.py tests/test_providers.py -q`, `poetry run ruff check . --no-cache`, `poetry run ruff format --check . --no-cache`
+```
 
 ---
 
@@ -432,7 +442,7 @@ Non devono essere implementate tecniche per superare autenticazione, CAPTCHA, pa
 
 # 9. Modelli Normalizzati
 
-**Stato:** `NON INIZIATO`
+**Stato:** `IN SVILUPPO`
 
 ## Modello Risultato Previsto
 
@@ -459,16 +469,24 @@ Non devono essere implementate tecniche per superare autenticazione, CAPTCHA, pa
 
 ## Requisiti
 
-* [ ] Modello Pydantic definito
-* [ ] Validazione URL
-* [ ] Validazione valuta
-* [ ] Validazione prezzo
-* [ ] Campi opzionali coerenti
+* [x] Modello Pydantic definito
+* [x] Validazione URL
+* [x] Validazione valuta
+* [x] Validazione prezzo
+* [x] Campi opzionali coerenti
 * [ ] Timestamp normalizzati
 * [ ] Mapping per ogni provider
-* [ ] Test dei dati validi
+* [x] Test dei dati validi
 * [ ] Test dei dati incompleti
 * [ ] Test dei dati non validi
+
+#### Evidenze
+
+```text
+Il modello `SearchResult` e stato introdotto in `backend/app/providers/models.py` come contratto condiviso iniziale dei provider.
+Sono gia presenti validazioni su URL, valuta, prezzo, campi testuali e `relevance_score`, piu un timestamp `collected_at` valorizzato automaticamente.
+Restano aperti la normalizzazione completa dei timestamp, i test sui dati incompleti/non validi e il mapping specifico per provider concreti.
+```
 
 ---
 
@@ -1234,6 +1252,10 @@ Questa sezione deve contenere soltanto comandi realmente eseguiti con successo.
 | `poetry run pytest tests/test_app.py tests/test_network.py -q` | OK | 2026-07-20 | Test backend e network layer con `ProxyProvider` superati |
 | `poetry run ruff check . --no-cache` | OK | 2026-07-20 | Lint backend superato dopo l'aggiunta del modulo proxy |
 | `poetry run ruff format --check . --no-cache` | OK | 2026-07-20 | Formattazione backend verificata dopo l'integrazione proxy |
+| `poetry check`           | OK    | 2026-07-20 | Metadata backend verificati dopo l'introduzione del contratto `MarketplaceProvider` |
+| `poetry run pytest tests/test_app.py tests/test_network.py tests/test_providers.py -q` | OK | 2026-07-20 | Test backend, network layer e contratto provider superati |
+| `poetry run ruff check . --no-cache` | OK | 2026-07-20 | Lint backend superato dopo l'aggiunta del package `app/providers` |
+| `poetry run ruff format --check . --no-cache` | OK | 2026-07-20 | Formattazione backend verificata dopo il contratto provider |
 | `poetry run ruff check . --no-cache` | OK | 2026-07-12 | Lint backend superato |
 | `poetry run ruff format --check . --no-cache` | OK | 2026-07-12 | Formattazione backend verificata |
 | `npm exec vite build -- --configLoader runner` | OK | 2026-07-12 | Build frontend completata |
@@ -1872,6 +1894,80 @@ Nessuno
 
 ```text
 Definire l'interfaccia comune `MarketplaceProvider`.
+```
+
+---
+
+## 2026-07-20 - Contratto comune MarketplaceProvider
+
+### Obiettivo
+
+Definire il contratto condiviso dei marketplace provider con modelli tipizzati, gerarchia di errori e test del comportamento minimo atteso.
+
+### Requisiti Coinvolti
+
+* REQ-005
+* REQ-019
+* REQ-024
+* REQ-025
+
+### File Analizzati
+
+* `OBIETTIVI_E_ROADMAP.md`
+* `STACK_E_TECNOLOGIE.md`
+* `RUOLI_E_STANDARD.md`
+* `ARCHITETTURA.md`
+* `CODEX_WORKFLOW.md`
+* `PROGRESS.md`
+* `backend/README.md`
+* `backend/app/providers/__init__.py`
+* `backend/app/models/__init__.py`
+* `backend/tests/test_app.py`
+
+### File Creati
+
+* `backend/app/providers/base.py`
+* `backend/app/providers/models.py`
+* `backend/app/providers/exceptions.py`
+* `backend/tests/test_providers.py`
+
+### File Modificati
+
+* `backend/README.md`
+* `backend/app/providers/__init__.py`
+* `PROGRESS.md`
+
+### File Eliminati
+
+* Nessuno
+
+### Implementazione
+
+Introdotti il contratto astratto `MarketplaceProvider`, i modelli condivisi `SearchRequest`, `SearchResult`, `ProviderMetadata` e `ProviderStatus`, piu una gerarchia di errori provider con helper di mapping dagli errori del network layer. Il contratto espone i metodi `search`, `normalize` e `validate`, mantiene il timeout specifico a livello metadata tramite `TimeoutSettings` e resta indipendente dai provider concreti.
+
+### Test Eseguiti
+
+* `poetry check` - superato
+* `poetry run pytest tests/test_app.py tests/test_network.py tests/test_providers.py -q` - superato
+* `poetry run ruff check . --no-cache` - superato
+* `poetry run ruff format --check . --no-cache` - superato
+
+### Stato Finale
+
+```text
+COMPLETATO
+```
+
+### Problemi Rilevati
+
+```text
+I modelli normalizzati condivisi sono stati avviati dentro il contratto provider, ma la sezione dedicata ai modelli resta ancora incompleta per timestamp, test negativi e mapping specifici per provider concreti.
+```
+
+### Prossimo Passo
+
+```text
+Completare il modello normalizzato condiviso `SearchResult` e i relativi test di validazione.
 ```
 
 ---

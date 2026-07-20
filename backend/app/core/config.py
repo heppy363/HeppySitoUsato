@@ -38,6 +38,12 @@ class Settings(BaseSettings):
     network_proxy_url: str | None = None
     network_proxy_username: str | None = None
     network_proxy_password: str | None = None
+    ebay_api_environment: str = "production"
+    ebay_api_marketplace_id: str = "EBAY_IT"
+    ebay_api_scope: str = "https://api.ebay.com/oauth/api_scope"
+    ebay_api_client_id: str | None = None
+    ebay_api_client_secret: str | None = None
+    ebay_api_access_token: str | None = None
 
     model_config = SettingsConfigDict(
         env_prefix="BACKEND_",

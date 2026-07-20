@@ -1,4 +1,4 @@
-from collections.abc import Awaitable, Callable, Mapping
+from collections.abc import Mapping
 from typing import Any
 
 from pydantic import ValidationError
@@ -6,23 +6,22 @@ from pydantic import ValidationError
 from app.network.config import TimeoutSettings
 from app.network.exceptions import NetworkError
 from app.providers.base import MarketplaceProvider
+from app.providers.ebay.adapter import EbaySearchAdapter
 from app.providers.ebay.exceptions import EbayParseError, map_ebay_network_error
 from app.providers.ebay.mapper import EbayResultMapper
-from app.providers.ebay.schemas import EbaySearchItem, EbaySearchResponse
+from app.providers.ebay.schemas import EbaySearchItem
 from app.providers.models import ProviderMetadata, ProviderStatus, SearchRequest, SearchResult
-
-EbaySearchExecutor = Callable[[SearchRequest], Awaitable[EbaySearchResponse | list[EbaySearchItem]]]
 
 
 class EbayProvider(MarketplaceProvider):
     def __init__(
         self,
         *,
-        search_executor: EbaySearchExecutor,
+        search_adapter: EbaySearchAdapter,
         mapper: EbayResultMapper | None = None,
         default_timeout: TimeoutSettings | None = None,
     ) -> None:
-        self._search_executor = search_executor
+        self._search_adapter = search_adapter
         self._mapper = mapper or EbayResultMapper()
         self._metadata = ProviderMetadata(
             name="EbayProvider",
@@ -37,12 +36,11 @@ class EbayProvider(MarketplaceProvider):
 
     async def search(self, request: SearchRequest) -> list[SearchResult]:
         try:
-            raw_results = await self._search_executor(request)
+            raw_results = await self._search_adapter.search(request)
         except NetworkError as exc:
             raise map_ebay_network_error(exc) from exc
 
-        items = raw_results.items if isinstance(raw_results, EbaySearchResponse) else raw_results
-        return [self.normalize(item) for item in items]
+        return [self.normalize(item) for item in raw_results.items]
 
     def normalize(self, raw_item: Mapping[str, Any] | EbaySearchItem) -> SearchResult:
         try:

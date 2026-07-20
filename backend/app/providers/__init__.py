@@ -1,7 +1,15 @@
 """Marketplace providers package."""
 
 from app.providers.base import MarketplaceProvider
-from app.providers.ebay import EbayProvider, EbayResultMapper
+from app.providers.ebay import (
+    ClientCredentialsEbayAccessTokenProvider,
+    EbayBrowseApiSearchAdapter,
+    EbayBrowseApiSettings,
+    EbayProvider,
+    EbayResultMapper,
+    MockEbaySearchAdapter,
+    StaticEbayAccessTokenProvider,
+)
 from app.providers.exceptions import (
     ProviderConfigurationError,
     ProviderError,
@@ -13,9 +21,13 @@ from app.providers.exceptions import (
 from app.providers.models import ProviderMetadata, ProviderStatus, SearchRequest, SearchResult
 
 __all__ = [
+    "ClientCredentialsEbayAccessTokenProvider",
+    "EbayBrowseApiSearchAdapter",
+    "EbayBrowseApiSettings",
     "EbayProvider",
     "EbayResultMapper",
     "MarketplaceProvider",
+    "MockEbaySearchAdapter",
     "ProviderConfigurationError",
     "ProviderError",
     "ProviderMetadata",
@@ -25,5 +37,6 @@ __all__ = [
     "ProviderUnavailableError",
     "SearchRequest",
     "SearchResult",
+    "StaticEbayAccessTokenProvider",
     "map_network_error",
 ]

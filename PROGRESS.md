@@ -107,13 +107,13 @@ IN SVILUPPO
 ## Fase Corrente
 
 ```text
-Struttura iniziale di EbayProvider
+Browse API ufficiale e autenticazione OAuth di EbayProvider
 ```
 
 ## Percentuale Indicativa
 
 ```text
-43%
+49%
 ```
 
 La percentuale è indicativa e non deve essere calcolata esclusivamente sul numero di file creati.
@@ -125,13 +125,13 @@ Deve riflettere il completamento reale delle macro aree previste nella roadmap.
 ```text
 Data: 2026-07-20
 Responsabile: Codex
-Attivita: Definizione della struttura iniziale e del mapping normalizzato di EbayProvider
+Attivita: Valutazione della Browse API ufficiale eBay e definizione dell'autenticazione OAuth applicativa
 ```
 
 ## Prossimo Passo Approvato
 
 ```text
-Definire l'adapter di ricerca di `EbayProvider` verso una sorgente ufficiale o mockata stabile.
+Integrare la costruzione di `EbayProvider` reale dai settings centralizzati e dal `NetworkClient` condiviso.
 ```
 
 Codex non deve iniziare automaticamente attività successive oltre il prossimo passo approvato.
@@ -143,9 +143,9 @@ Codex non deve iniziare automaticamente attività successive oltre il prossimo p
 | Macro Area              | Stato        | Avanzamento | Note                              |
 | ----------------------- | ------------ | ----------: | --------------------------------- |
 | Infrastruttura e Docker | IN SVILUPPO  |         45% | Dockerfile backend/frontend allineati, avvio stack da completare |
-| Configurazione Backend  | IN SVILUPPO  |         88% | Poetry, lockfile, struttura FastAPI, provider concreti iniziali, modelli normalizzati validati e settings di rete con strategie proxy tipizzate |
+| Configurazione Backend  | IN SVILUPPO  |         90% | Poetry, lockfile, struttura FastAPI, provider concreti iniziali, modelli normalizzati validati, settings di rete con strategie proxy tipizzate e configurazione eBay ufficiale |
 | Network Layer           | IN SVILUPPO  |         75% | Client condiviso, configurazione proxy astratta e test mockati presenti; restano da definire i contratti marketplace |
-| Marketplace Provider    | IN SVILUPPO  |         42% | Contratto comune, `EbayProvider` iniziale con mapper e test presenti; integrazione reale ancora assente |
+| Marketplace Provider    | IN SVILUPPO  |         60% | Contratto comune, `EbayProvider` con adapter mockato, adapter Browse API ufficiale, autenticazione applicativa e test presenti; verifica live ancora assente |
 | Aggregation Engine      | NON INIZIATO |          0% | Nessuna logica di aggregazione    |
 | Cache Redis             | NON INIZIATO |          0% | Solo servizio Docker, cache applicativa assente |
 | PostgreSQL e Migrazioni | NON INIZIATO |          0% | Solo servizio Docker, ORM e Alembic assenti |
@@ -156,10 +156,10 @@ Codex non deve iniziare automaticamente attività successive oltre il prossimo p
 | State Management        | IN SVILUPPO  |         15% | Pinia configurato con store iniziale |
 | Server State            | IN SVILUPPO  |         15% | TanStack Query configurato con query client base |
 | Interfaccia Grafica     | IN SVILUPPO  |         10% | Shell UI iniziale presente, feature di ricerca assenti |
-| Testing                 | IN SVILUPPO  |         44% | Test backend, network layer, contratto provider, validazione modelli e primo provider concreto presenti |
+| Testing                 | IN SVILUPPO  |         54% | Test backend, network layer, contratto provider, validazione modelli e primo provider concreto con adapter mockato e adapter Browse API ufficiale presenti |
 | Monitoring              | IN SVILUPPO  |         10% | Servizi base presenti, metriche e dashboard da implementare |
 | Sicurezza               | NON INIZIATO |          0% | Controlli non implementati        |
-| Documentazione          | IN SVILUPPO  |         98% | Documenti principali verificati e progresso aggiornato |
+| Documentazione          | IN SVILUPPO  |         99% | Documenti principali verificati, variabili eBay documentate e progresso aggiornato |
 
 ---
 
@@ -378,13 +378,13 @@ Verifiche riuscite: `poetry check`, `poetry run pytest tests/test_app.py tests/t
 
 ## eBay Provider
 
-**Stato:** `IN SVILUPPO`
+**Stato:** `DA VERIFICARE`
 
-* [ ] Valutare API ufficiali disponibili
-* [ ] Definire autenticazione quando necessaria
-* [ ] Implementare ricerca
+* [x] Valutare API ufficiali disponibili
+* [x] Definire autenticazione quando necessaria
+* [x] Implementare ricerca
 * [x] Normalizzare risultati
-* [ ] Gestire paginazione
+* [x] Gestire paginazione
 * [x] Gestire errori
 * [x] Gestire risultati incompleti
 * [x] Aggiungere mock
@@ -393,11 +393,11 @@ Verifiche riuscite: `poetry check`, `poetry run pytest tests/test_app.py tests/t
 #### Evidenze
 
 ```text
-File creati: `backend/app/providers/ebay/__init__.py`, `backend/app/providers/ebay/schemas.py`, `backend/app/providers/ebay/mapper.py`, `backend/app/providers/ebay/exceptions.py`, `backend/app/providers/ebay/provider.py`, `backend/tests/test_ebay_provider.py`
-File modificati: `backend/app/providers/__init__.py`, `backend/README.md`
-Componenti introdotti: `EbayProvider`, `EbayResultMapper`, schemi raw `EbaySearchItem`/`EbaySearchResponse`, errori specifici e mapping verso `SearchResult`
-Verifiche riuscite: mapping normalizzato, gestione degli errori di rete, gestione di payload incompleti e ricerca tramite executor mockato
-Limite aperto: l'adapter reale verso una API o sorgente ufficiale eBay non e ancora stato definito, quindi autenticazione e paginazione restano aperte.
+File creati: `backend/app/providers/ebay/__init__.py`, `backend/app/providers/ebay/schemas.py`, `backend/app/providers/ebay/mapper.py`, `backend/app/providers/ebay/exceptions.py`, `backend/app/providers/ebay/provider.py`, `backend/app/providers/ebay/adapter.py`, `backend/app/providers/ebay/config.py`, `backend/app/providers/ebay/auth.py`, `backend/tests/test_ebay_provider.py`
+File modificati: `backend/app/core/config.py`, `.env.example`, `backend/app/providers/__init__.py`, `backend/README.md`
+Componenti introdotti: `EbayProvider`, `EbaySearchAdapter`, `MockEbaySearchAdapter`, `EbayBrowseApiSearchAdapter`, `EbayBrowseApiSettings`, `EbayAccessTokenProvider`, `StaticEbayAccessTokenProvider`, `ClientCredentialsEbayAccessTokenProvider`, schemi raw `EbaySearchItem`/`EbaySearchResponse` e risposte ufficiali Browse API/OAuth
+Verifiche riuscite: valutazione della Browse API ufficiale eBay, autenticazione OAuth applicativa via client credentials o token statico, mapping normalizzato, gestione degli errori di rete, gestione di payload incompleti, ricerca tramite adapter mockato e ricerca tramite adapter ufficiale con header `Authorization` e `X-EBAY-C-MARKETPLACE-ID`
+Limite aperto: l'integrazione eBay resta verificata solo tramite test locali e mock, quindi manca ancora una verifica live con credenziali e accesso effettivo all'API.
 ```
 
 ---
@@ -1268,6 +1268,14 @@ Questa sezione deve contenere soltanto comandi realmente eseguiti con successo.
 | `poetry run ruff format --check . --no-cache` | OK | 2026-07-20 | Formattazione backend verificata dopo il contratto provider |
 | `poetry check`           | OK    | 2026-07-20 | Metadata backend verificati dopo il completamento di `SearchResult` |
 | `poetry run pytest tests/test_app.py tests/test_network.py tests/test_providers.py -q` | OK | 2026-07-20 | Test backend, network e validazione `SearchResult` superati |
+| `poetry check`           | OK    | 2026-07-20 | Metadata backend verificati dopo l'introduzione dell'adapter di ricerca di `EbayProvider` |
+| `poetry run pytest tests/test_app.py tests/test_network.py tests/test_providers.py tests/test_ebay_provider.py -q` | OK | 2026-07-20 | Test backend, provider condivisi e `EbayProvider` con adapter e paginazione mockata superati |
+| `poetry run ruff check . --no-cache` | OK | 2026-07-20 | Lint backend superato dopo l'estensione di `EbayProvider` con adapter e paginazione |
+| `poetry run ruff format --check . --no-cache` | OK | 2026-07-20 | Formattazione backend verificata dopo l'estensione di `EbayProvider` con adapter e paginazione |
+| `poetry check`           | OK    | 2026-07-20 | Metadata backend verificati dopo l'introduzione della Browse API ufficiale e dell'autenticazione OAuth di `EbayProvider` |
+| `poetry run pytest tests/test_app.py tests/test_network.py tests/test_providers.py tests/test_ebay_provider.py -q` | OK | 2026-07-20 | Test backend, provider condivisi e `EbayProvider` con adapter Browse API ufficiale superati |
+| `poetry run ruff check . --no-cache` | OK | 2026-07-20 | Lint backend superato dopo la configurazione OAuth e Browse API di `EbayProvider` |
+| `poetry run ruff format --check . --no-cache` | OK | 2026-07-20 | Formattazione backend verificata dopo la configurazione OAuth e Browse API di `EbayProvider` |
 | `poetry run ruff check . --no-cache` | OK | 2026-07-20 | Lint backend superato dopo l'estensione delle validazioni di `SearchResult` |
 | `poetry run ruff format --check . --no-cache` | OK | 2026-07-20 | Formattazione backend verificata dopo i nuovi test del modello |
 | `poetry check`           | OK    | 2026-07-20 | Metadata backend verificati dopo l'introduzione di `EbayProvider` |
@@ -2132,6 +2140,168 @@ L'adapter reale di `EbayProvider` verso una API o sorgente ufficiale eBay non e 
 
 ```text
 Definire l'adapter di ricerca di `EbayProvider` verso una sorgente ufficiale o mockata stabile.
+```
+
+---
+
+## 2026-07-20 - Adapter di ricerca e paginazione di EbayProvider
+
+### Obiettivo
+
+Introdurre un adapter di ricerca stabile per `EbayProvider` e chiudere il supporto verificabile a ricerca e paginazione senza dichiarare integrata una sorgente eBay ufficiale non ancora validata.
+
+### Requisiti Coinvolti
+
+* REQ-005
+* REQ-019
+* REQ-024
+* REQ-025
+
+### File Analizzati
+
+* `OBIETTIVI_E_ROADMAP.md`
+* `STACK_E_TECNOLOGIE.md`
+* `RUOLI_E_STANDARD.md`
+* `ARCHITETTURA.md`
+* `CODEX_WORKFLOW.md`
+* `PROGRESS.md`
+* `backend/app/providers/__init__.py`
+* `backend/app/providers/ebay/__init__.py`
+* `backend/app/providers/ebay/schemas.py`
+* `backend/app/providers/ebay/provider.py`
+* `backend/tests/test_ebay_provider.py`
+* `backend/README.md`
+
+### File Creati
+
+* `backend/app/providers/ebay/adapter.py`
+
+### File Modificati
+
+* `backend/app/providers/__init__.py`
+* `backend/app/providers/ebay/__init__.py`
+* `backend/app/providers/ebay/schemas.py`
+* `backend/app/providers/ebay/provider.py`
+* `backend/tests/test_ebay_provider.py`
+* `backend/README.md`
+* `PROGRESS.md`
+
+### File Eliminati
+
+* Nessuno
+
+### Implementazione
+
+`EbayProvider` e stato riallineato su un contratto esplicito `EbaySearchAdapter`, con un `MockEbaySearchAdapter` stabile che supporta ricerca asincrona e paginazione tramite `page` e `page_size`. Gli schemi raw ora includono i metadati di paginazione e i test coprono sia il mapping dei risultati sia il comportamento paginato dell'adapter mockato.
+
+### Test Eseguiti
+
+* `poetry check` - superato
+* `poetry run pytest tests/test_app.py tests/test_network.py tests/test_providers.py tests/test_ebay_provider.py -q` - superato
+* `poetry run ruff check . --no-cache` - superato
+* `poetry run ruff format --check . --no-cache` - superato
+
+### Stato Finale
+
+```text
+COMPLETATO
+```
+
+### Problemi Rilevati
+
+```text
+La sorgente ufficiale o autorizzata per `EbayProvider` non e ancora stata selezionata, quindi restano aperte la verifica delle API disponibili e la definizione dell'autenticazione eventualmente richiesta.
+```
+
+### Prossimo Passo
+
+```text
+Valutare una sorgente ufficiale o autorizzata per `EbayProvider` e definire l'autenticazione necessaria.
+```
+
+---
+
+## 2026-07-20 - Browse API ufficiale e autenticazione OAuth di EbayProvider
+
+### Obiettivo
+
+Valutare una sorgente eBay ufficiale e autorizzata, definire l'autenticazione richiesta e introdurre un adapter concreto verificabile senza dipendere da chiamate live non autorizzate.
+
+### Requisiti Coinvolti
+
+* REQ-005
+* REQ-019
+* REQ-024
+* REQ-025
+
+### File Analizzati
+
+* `OBIETTIVI_E_ROADMAP.md`
+* `STACK_E_TECNOLOGIE.md`
+* `RUOLI_E_STANDARD.md`
+* `ARCHITETTURA.md`
+* `CODEX_WORKFLOW.md`
+* `PROGRESS.md`
+* `.env.example`
+* `backend/README.md`
+* `backend/app/core/config.py`
+* `backend/app/network/client.py`
+* `backend/app/network/models.py`
+* `backend/app/providers/__init__.py`
+* `backend/app/providers/ebay/__init__.py`
+* `backend/app/providers/ebay/adapter.py`
+* `backend/app/providers/ebay/provider.py`
+* `backend/app/providers/ebay/schemas.py`
+* `backend/tests/test_ebay_provider.py`
+
+### File Creati
+
+* `backend/app/providers/ebay/config.py`
+* `backend/app/providers/ebay/auth.py`
+
+### File Modificati
+
+* `.env.example`
+* `backend/README.md`
+* `backend/app/core/config.py`
+* `backend/app/providers/__init__.py`
+* `backend/app/providers/ebay/__init__.py`
+* `backend/app/providers/ebay/adapter.py`
+* `backend/app/providers/ebay/schemas.py`
+* `backend/tests/test_ebay_provider.py`
+* `PROGRESS.md`
+
+### File Eliminati
+
+* Nessuno
+
+### Implementazione
+
+Valutata la `Browse API` ufficiale di eBay come sorgente coerente per la ricerca e introdotti `EbayBrowseApiSettings`, `EbayBrowseApiSearchAdapter` e il contratto `EbayAccessTokenProvider`. L'autenticazione e stata definita tramite token applicativo OAuth con client credentials, mantenendo anche un provider statico per ambienti controllati o token pre-generati; i test verificano richiesta token, caching locale, header obbligatori, marketplace header e mapping della risposta ufficiale verso gli schemi normalizzati interni.
+
+### Test Eseguiti
+
+* `poetry check` - superato
+* `poetry run pytest tests/test_app.py tests/test_network.py tests/test_providers.py tests/test_ebay_provider.py -q` - superato
+* `poetry run ruff check . --no-cache` - superato
+* `poetry run ruff format --check . --no-cache` - superato
+
+### Stato Finale
+
+```text
+COMPLETATO
+```
+
+### Problemi Rilevati
+
+```text
+La Browse API e l'autenticazione OAuth sono state definite e testate localmente con mock, ma l'integrazione non e ancora verificata contro eBay live per assenza di credenziali e approvazione runtime nel repository.
+```
+
+### Prossimo Passo
+
+```text
+Integrare la costruzione di `EbayProvider` reale dai settings centralizzati e dal `NetworkClient` condiviso.
 ```
 
 ---

@@ -107,13 +107,13 @@ IN SVILUPPO
 ## Fase Corrente
 
 ```text
-Validazione del modello normalizzato SearchResult
+Struttura iniziale di EbayProvider
 ```
 
 ## Percentuale Indicativa
 
 ```text
-39%
+43%
 ```
 
 La percentuale è indicativa e non deve essere calcolata esclusivamente sul numero di file creati.
@@ -125,13 +125,13 @@ Deve riflettere il completamento reale delle macro aree previste nella roadmap.
 ```text
 Data: 2026-07-20
 Responsabile: Codex
-Attivita: Completamento della validazione condivisa del modello SearchResult
+Attivita: Definizione della struttura iniziale e del mapping normalizzato di EbayProvider
 ```
 
 ## Prossimo Passo Approvato
 
 ```text
-Definire il mapping normalizzato del primo provider concreto, iniziando dalla struttura di `EbayProvider`.
+Definire l'adapter di ricerca di `EbayProvider` verso una sorgente ufficiale o mockata stabile.
 ```
 
 Codex non deve iniziare automaticamente attività successive oltre il prossimo passo approvato.
@@ -143,9 +143,9 @@ Codex non deve iniziare automaticamente attività successive oltre il prossimo p
 | Macro Area              | Stato        | Avanzamento | Note                              |
 | ----------------------- | ------------ | ----------: | --------------------------------- |
 | Infrastruttura e Docker | IN SVILUPPO  |         45% | Dockerfile backend/frontend allineati, avvio stack da completare |
-| Configurazione Backend  | IN SVILUPPO  |         86% | Poetry, lockfile, struttura FastAPI, contratti backend condivisi, modelli normalizzati validati e settings di rete con strategie proxy tipizzate |
+| Configurazione Backend  | IN SVILUPPO  |         88% | Poetry, lockfile, struttura FastAPI, provider concreti iniziali, modelli normalizzati validati e settings di rete con strategie proxy tipizzate |
 | Network Layer           | IN SVILUPPO  |         75% | Client condiviso, configurazione proxy astratta e test mockati presenti; restano da definire i contratti marketplace |
-| Marketplace Provider    | IN SVILUPPO  |         32% | Contratto comune, modelli normalizzati validati e mapping errori introdotti; nessun provider concreto ancora presente |
+| Marketplace Provider    | IN SVILUPPO  |         42% | Contratto comune, `EbayProvider` iniziale con mapper e test presenti; integrazione reale ancora assente |
 | Aggregation Engine      | NON INIZIATO |          0% | Nessuna logica di aggregazione    |
 | Cache Redis             | NON INIZIATO |          0% | Solo servizio Docker, cache applicativa assente |
 | PostgreSQL e Migrazioni | NON INIZIATO |          0% | Solo servizio Docker, ORM e Alembic assenti |
@@ -156,10 +156,10 @@ Codex non deve iniziare automaticamente attività successive oltre il prossimo p
 | State Management        | IN SVILUPPO  |         15% | Pinia configurato con store iniziale |
 | Server State            | IN SVILUPPO  |         15% | TanStack Query configurato con query client base |
 | Interfaccia Grafica     | IN SVILUPPO  |         10% | Shell UI iniziale presente, feature di ricerca assenti |
-| Testing                 | IN SVILUPPO  |         39% | Test backend, network layer, contratto provider e validazione dei modelli presenti; copertura applicativa ancora minima |
+| Testing                 | IN SVILUPPO  |         44% | Test backend, network layer, contratto provider, validazione modelli e primo provider concreto presenti |
 | Monitoring              | IN SVILUPPO  |         10% | Servizi base presenti, metriche e dashboard da implementare |
 | Sicurezza               | NON INIZIATO |          0% | Controlli non implementati        |
-| Documentazione          | IN SVILUPPO  |         97% | Documenti principali verificati e progresso aggiornato |
+| Documentazione          | IN SVILUPPO  |         98% | Documenti principali verificati e progresso aggiornato |
 
 ---
 
@@ -378,17 +378,27 @@ Verifiche riuscite: `poetry check`, `poetry run pytest tests/test_app.py tests/t
 
 ## eBay Provider
 
-**Stato:** `NON INIZIATO`
+**Stato:** `IN SVILUPPO`
 
 * [ ] Valutare API ufficiali disponibili
 * [ ] Definire autenticazione quando necessaria
 * [ ] Implementare ricerca
-* [ ] Normalizzare risultati
+* [x] Normalizzare risultati
 * [ ] Gestire paginazione
-* [ ] Gestire errori
-* [ ] Gestire risultati incompleti
-* [ ] Aggiungere mock
-* [ ] Aggiungere test
+* [x] Gestire errori
+* [x] Gestire risultati incompleti
+* [x] Aggiungere mock
+* [x] Aggiungere test
+
+#### Evidenze
+
+```text
+File creati: `backend/app/providers/ebay/__init__.py`, `backend/app/providers/ebay/schemas.py`, `backend/app/providers/ebay/mapper.py`, `backend/app/providers/ebay/exceptions.py`, `backend/app/providers/ebay/provider.py`, `backend/tests/test_ebay_provider.py`
+File modificati: `backend/app/providers/__init__.py`, `backend/README.md`
+Componenti introdotti: `EbayProvider`, `EbayResultMapper`, schemi raw `EbaySearchItem`/`EbaySearchResponse`, errori specifici e mapping verso `SearchResult`
+Verifiche riuscite: mapping normalizzato, gestione degli errori di rete, gestione di payload incompleti e ricerca tramite executor mockato
+Limite aperto: l'adapter reale verso una API o sorgente ufficiale eBay non e ancora stato definito, quindi autenticazione e paginazione restano aperte.
+```
 
 ---
 
@@ -1260,6 +1270,10 @@ Questa sezione deve contenere soltanto comandi realmente eseguiti con successo.
 | `poetry run pytest tests/test_app.py tests/test_network.py tests/test_providers.py -q` | OK | 2026-07-20 | Test backend, network e validazione `SearchResult` superati |
 | `poetry run ruff check . --no-cache` | OK | 2026-07-20 | Lint backend superato dopo l'estensione delle validazioni di `SearchResult` |
 | `poetry run ruff format --check . --no-cache` | OK | 2026-07-20 | Formattazione backend verificata dopo i nuovi test del modello |
+| `poetry check`           | OK    | 2026-07-20 | Metadata backend verificati dopo l'introduzione di `EbayProvider` |
+| `poetry run pytest tests/test_app.py tests/test_network.py tests/test_providers.py tests/test_ebay_provider.py -q` | OK | 2026-07-20 | Test backend, provider condivisi e struttura iniziale `EbayProvider` superati |
+| `poetry run ruff check . --no-cache` | OK | 2026-07-20 | Lint backend superato dopo l'aggiunta del package `app/providers/ebay` |
+| `poetry run ruff format --check . --no-cache` | OK | 2026-07-20 | Formattazione backend verificata dopo i test del provider eBay |
 | `poetry run ruff check . --no-cache` | OK | 2026-07-12 | Lint backend superato |
 | `poetry run ruff format --check . --no-cache` | OK | 2026-07-12 | Formattazione backend verificata |
 | `npm exec vite build -- --configLoader runner` | OK | 2026-07-12 | Build frontend completata |
@@ -2041,6 +2055,83 @@ Resta ancora aperto il mapping specifico di `SearchResult` per i provider concre
 
 ```text
 Definire il mapping normalizzato del primo provider concreto, iniziando dalla struttura di `EbayProvider`.
+```
+
+---
+
+## 2026-07-20 - Struttura iniziale di EbayProvider
+
+### Obiettivo
+
+Introdurre la prima struttura concreta di `EbayProvider` con schema raw, mapper normalizzato e test, senza inventare ancora integrazioni reali verso endpoint esterni.
+
+### Requisiti Coinvolti
+
+* REQ-005
+* REQ-019
+* REQ-024
+* REQ-025
+
+### File Analizzati
+
+* `OBIETTIVI_E_ROADMAP.md`
+* `STACK_E_TECNOLOGIE.md`
+* `RUOLI_E_STANDARD.md`
+* `ARCHITETTURA.md`
+* `CODEX_WORKFLOW.md`
+* `PROGRESS.md`
+* `backend/app/providers/__init__.py`
+* `backend/app/providers/exceptions.py`
+* `backend/app/providers/models.py`
+* `backend/tests/test_providers.py`
+* `backend/README.md`
+
+### File Creati
+
+* `backend/app/providers/ebay/__init__.py`
+* `backend/app/providers/ebay/schemas.py`
+* `backend/app/providers/ebay/mapper.py`
+* `backend/app/providers/ebay/exceptions.py`
+* `backend/app/providers/ebay/provider.py`
+* `backend/tests/test_ebay_provider.py`
+
+### File Modificati
+
+* `backend/app/providers/__init__.py`
+* `backend/README.md`
+* `PROGRESS.md`
+
+### File Eliminati
+
+* Nessuno
+
+### Implementazione
+
+Introdotto un package `app/providers/ebay/` con schema raw tipizzato, mapper verso `SearchResult`, errori specifici e un `EbayProvider` concreto basato su executor iniettato. Questa struttura consente di testare ricerca, normalizzazione ed error handling senza dichiarare verificata una integrazione eBay reale non ancora definita.
+
+### Test Eseguiti
+
+* `poetry check` - superato
+* `poetry run pytest tests/test_app.py tests/test_network.py tests/test_providers.py tests/test_ebay_provider.py -q` - superato
+* `poetry run ruff check . --no-cache` - superato
+* `poetry run ruff format --check . --no-cache` - superato
+
+### Stato Finale
+
+```text
+COMPLETATO
+```
+
+### Problemi Rilevati
+
+```text
+L'adapter reale di `EbayProvider` verso una API o sorgente ufficiale eBay non e ancora definito, quindi autenticazione, paginazione e ricerca reale restano aperte.
+```
+
+### Prossimo Passo
+
+```text
+Definire l'adapter di ricerca di `EbayProvider` verso una sorgente ufficiale o mockata stabile.
 ```
 
 ---

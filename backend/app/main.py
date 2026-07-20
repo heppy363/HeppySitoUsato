@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from app.api.router import api_router
 from app.core.config import Settings, get_settings
 from app.network import HttpxNetworkClient
-from app.providers import maybe_build_ebay_provider
+from app.providers import ProviderRegistry, maybe_build_ebay_provider
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -16,13 +16,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         network_client = HttpxNetworkClient(app_settings.build_network_settings())
         app.state.network_client = network_client
-        app.state.providers = {}
+        provider_registry = ProviderRegistry()
+        app.state.providers = provider_registry
         app.state.ebay_provider = maybe_build_ebay_provider(
             settings=app_settings,
             network_client=network_client,
         )
         if app.state.ebay_provider is not None:
-            app.state.providers["ebay"] = app.state.ebay_provider
+            provider_registry.register(app.state.ebay_provider)
 
         try:
             yield

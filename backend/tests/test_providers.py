@@ -7,7 +7,12 @@ from pydantic import ValidationError
 
 from app.network.config import TimeoutSettings
 from app.network.exceptions import NetworkHTTPStatusError, NetworkTimeoutError
-from app.providers import MarketplaceProvider, ProviderMetadata, ProviderResponseError
+from app.providers import (
+    MarketplaceProvider,
+    ProviderMetadata,
+    ProviderRegistry,
+    ProviderResponseError,
+)
 from app.providers.exceptions import ProviderUnavailableError, map_network_error
 from app.providers.models import ProviderStatus, SearchRequest, SearchResult
 
@@ -207,6 +212,29 @@ def test_map_network_error_maps_http_status_to_provider_response_error() -> None
     )
 
     assert isinstance(error, ProviderResponseError)
+
+
+def test_provider_registry_registers_and_returns_provider_by_platform() -> None:
+    registry = ProviderRegistry()
+    provider = DummyMarketplaceProvider()
+
+    registry.register(provider)
+
+    assert len(registry) == 1
+    assert registry.get("dummy") is provider
+    assert registry["dummy"] is provider
+    assert registry.platforms == ("dummy",)
+    assert registry.all() == (provider,)
+    assert registry.items() == (("dummy", provider),)
+
+
+def test_provider_registry_can_be_initialized_with_existing_providers() -> None:
+    provider = DummyMarketplaceProvider()
+
+    registry = ProviderRegistry([provider])
+
+    assert "dummy" in registry
+    assert tuple(registry) == (provider,)
 
 
 @pytest.mark.asyncio

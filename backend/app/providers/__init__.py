@@ -21,6 +21,7 @@ from app.providers.exceptions import (
     map_network_error,
 )
 from app.providers.models import ProviderMetadata, ProviderStatus, SearchRequest, SearchResult
+from app.providers.registry import ProviderRegistry
 
 __all__ = [
     "ClientCredentialsEbayAccessTokenProvider",
@@ -34,6 +35,7 @@ __all__ = [
     "ProviderError",
     "ProviderMetadata",
     "ProviderParseError",
+    "ProviderRegistry",
     "ProviderResponseError",
     "ProviderStatus",
     "ProviderUnavailableError",

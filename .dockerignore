@@ -1,0 +1,10 @@
+.git
+.agents
+.docker-tmp
+.venv
+__pycache__
+backend/.pytest_cache
+backend/.ruff_cache
+backend/.mypy_cache
+frontend/node_modules
+frontend/dist

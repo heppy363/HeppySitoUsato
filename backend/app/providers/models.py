@@ -65,6 +65,36 @@ class SearchResult(BaseModel):
             raise ValueError("text fields cannot be blank")
         return normalized
 
+    @field_validator("id", "external_id", mode="before")
+    @classmethod
+    def normalize_identifier_fields(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("identifier fields cannot be blank")
+        return normalized
+
+    @field_validator("description", "location", "seller_name", "condition", mode="before")
+    @classmethod
+    def normalize_optional_text_fields(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = value.strip()
+        return normalized or None
+
+    @field_validator("published_at", "collected_at", mode="before")
+    @classmethod
+    def normalize_datetime_fields(cls, value: datetime | str | None) -> datetime | None:
+        if value is None:
+            return None
+
+        if isinstance(value, str):
+            value = datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+        if value.tzinfo is None:
+            return value.replace(tzinfo=UTC)
+
+        return value.astimezone(UTC)
+
 
 class ProviderMetadata(BaseModel):
     name: str = Field(min_length=1)

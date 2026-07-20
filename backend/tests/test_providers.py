@@ -1,4 +1,5 @@
 from collections.abc import Mapping
+from datetime import UTC, datetime
 from typing import Any
 
 import pytest
@@ -60,8 +61,8 @@ def test_search_request_rejects_blank_query() -> None:
 
 def test_search_result_normalizes_currency_and_defaults_timestamp() -> None:
     result = SearchResult(
-        id="provider:item-1",
-        external_id="item-1",
+        id=" provider:item-1 ",
+        external_id=" item-1 ",
         title="RTX 3090 Founders Edition",
         price=999.0,
         currency="eur",
@@ -69,9 +70,113 @@ def test_search_result_normalizes_currency_and_defaults_timestamp() -> None:
         url="https://example.com/items/item-1",
     )
 
+    assert result.id == "provider:item-1"
+    assert result.external_id == "item-1"
     assert result.currency == "EUR"
     assert result.relevance_score == 0.0
-    assert result.collected_at.tzinfo is not None
+    assert result.collected_at.tzinfo == UTC
+
+
+def test_search_result_normalizes_timestamps_to_utc() -> None:
+    result = SearchResult(
+        id="provider:item-1",
+        external_id="item-1",
+        title="RTX 3090 Founders Edition",
+        price=999.0,
+        currency="EUR",
+        platform="ebay",
+        url="https://example.com/items/item-1",
+        published_at="2026-07-20T10:30:00+02:00",
+        collected_at=datetime(2026, 7, 20, 9, 0, 0),
+    )
+
+    assert result.published_at == datetime(2026, 7, 20, 8, 30, 0, tzinfo=UTC)
+    assert result.collected_at == datetime(2026, 7, 20, 9, 0, 0, tzinfo=UTC)
+
+
+def test_search_result_allows_incomplete_optional_fields() -> None:
+    result = SearchResult(
+        id="provider:item-2",
+        external_id="item-2",
+        title="Used GPU",
+        price=450.0,
+        currency="EUR",
+        platform="subito",
+        url="https://example.com/items/item-2",
+        description="   ",
+        location="  ",
+        seller_name="   ",
+        condition=" ",
+    )
+
+    assert result.description is None
+    assert result.location is None
+    assert result.seller_name is None
+    assert result.condition is None
+
+
+@pytest.mark.parametrize(
+    ("payload", "field_name"),
+    [
+        (
+            {
+                "id": "provider:item-1",
+                "external_id": "item-1",
+                "title": "RTX 3090",
+                "price": 999.0,
+                "currency": "EU",
+                "platform": "ebay",
+                "url": "https://example.com/items/item-1",
+            },
+            "currency",
+        ),
+        (
+            {
+                "id": "provider:item-1",
+                "external_id": "item-1",
+                "title": "RTX 3090",
+                "price": -1.0,
+                "currency": "EUR",
+                "platform": "ebay",
+                "url": "https://example.com/items/item-1",
+            },
+            "price",
+        ),
+        (
+            {
+                "id": "provider:item-1",
+                "external_id": "item-1",
+                "title": "RTX 3090",
+                "price": 999.0,
+                "currency": "EUR",
+                "platform": "ebay",
+                "url": "https://example.com/items/item-1",
+                "relevance_score": 1.5,
+            },
+            "relevance_score",
+        ),
+        (
+            {
+                "id": "provider:item-1",
+                "external_id": "item-1",
+                "title": "RTX 3090",
+                "price": 999.0,
+                "currency": "EUR",
+                "platform": "ebay",
+                "url": "not-a-url",
+            },
+            "url",
+        ),
+    ],
+)
+def test_search_result_rejects_invalid_payloads(
+    payload: dict[str, object],
+    field_name: str,
+) -> None:
+    with pytest.raises(ValidationError) as exc_info:
+        SearchResult(**payload)
+
+    assert field_name in str(exc_info.value)
 
 
 def test_map_network_error_maps_timeout_to_provider_unavailable() -> None:

@@ -107,13 +107,13 @@ IN SVILUPPO
 ## Fase Corrente
 
 ```text
-Contratto comune MarketplaceProvider
+Validazione del modello normalizzato SearchResult
 ```
 
 ## Percentuale Indicativa
 
 ```text
-36%
+39%
 ```
 
 La percentuale è indicativa e non deve essere calcolata esclusivamente sul numero di file creati.
@@ -125,13 +125,13 @@ Deve riflettere il completamento reale delle macro aree previste nella roadmap.
 ```text
 Data: 2026-07-20
 Responsabile: Codex
-Attivita: Definizione del contratto comune MarketplaceProvider
+Attivita: Completamento della validazione condivisa del modello SearchResult
 ```
 
 ## Prossimo Passo Approvato
 
 ```text
-Completare il modello normalizzato condiviso `SearchResult` e i relativi test di validazione.
+Definire il mapping normalizzato del primo provider concreto, iniziando dalla struttura di `EbayProvider`.
 ```
 
 Codex non deve iniziare automaticamente attività successive oltre il prossimo passo approvato.
@@ -143,9 +143,9 @@ Codex non deve iniziare automaticamente attività successive oltre il prossimo p
 | Macro Area              | Stato        | Avanzamento | Note                              |
 | ----------------------- | ------------ | ----------: | --------------------------------- |
 | Infrastruttura e Docker | IN SVILUPPO  |         45% | Dockerfile backend/frontend allineati, avvio stack da completare |
-| Configurazione Backend  | IN SVILUPPO  |         84% | Poetry, lockfile, struttura FastAPI, contratti backend condivisi e settings di rete con strategie proxy tipizzate |
+| Configurazione Backend  | IN SVILUPPO  |         86% | Poetry, lockfile, struttura FastAPI, contratti backend condivisi, modelli normalizzati validati e settings di rete con strategie proxy tipizzate |
 | Network Layer           | IN SVILUPPO  |         75% | Client condiviso, configurazione proxy astratta e test mockati presenti; restano da definire i contratti marketplace |
-| Marketplace Provider    | IN SVILUPPO  |         25% | Contratto comune, modelli e mapping errori introdotti; nessun provider concreto ancora presente |
+| Marketplace Provider    | IN SVILUPPO  |         32% | Contratto comune, modelli normalizzati validati e mapping errori introdotti; nessun provider concreto ancora presente |
 | Aggregation Engine      | NON INIZIATO |          0% | Nessuna logica di aggregazione    |
 | Cache Redis             | NON INIZIATO |          0% | Solo servizio Docker, cache applicativa assente |
 | PostgreSQL e Migrazioni | NON INIZIATO |          0% | Solo servizio Docker, ORM e Alembic assenti |
@@ -156,10 +156,10 @@ Codex non deve iniziare automaticamente attività successive oltre il prossimo p
 | State Management        | IN SVILUPPO  |         15% | Pinia configurato con store iniziale |
 | Server State            | IN SVILUPPO  |         15% | TanStack Query configurato con query client base |
 | Interfaccia Grafica     | IN SVILUPPO  |         10% | Shell UI iniziale presente, feature di ricerca assenti |
-| Testing                 | IN SVILUPPO  |         35% | Test backend, network layer e contratto provider presenti; copertura applicativa ancora minima |
+| Testing                 | IN SVILUPPO  |         39% | Test backend, network layer, contratto provider e validazione dei modelli presenti; copertura applicativa ancora minima |
 | Monitoring              | IN SVILUPPO  |         10% | Servizi base presenti, metriche e dashboard da implementare |
 | Sicurezza               | NON INIZIATO |          0% | Controlli non implementati        |
-| Documentazione          | IN SVILUPPO  |         96% | Documenti principali verificati e progresso aggiornato |
+| Documentazione          | IN SVILUPPO  |         97% | Documenti principali verificati e progresso aggiornato |
 
 ---
 
@@ -442,7 +442,7 @@ Verifiche riuscite: `poetry check`, `poetry run pytest tests/test_app.py tests/t
 
 # 9. Modelli Normalizzati
 
-**Stato:** `IN SVILUPPO`
+**Stato:** `DA MIGLIORARE`
 
 ## Modello Risultato Previsto
 
@@ -474,18 +474,18 @@ Verifiche riuscite: `poetry check`, `poetry run pytest tests/test_app.py tests/t
 * [x] Validazione valuta
 * [x] Validazione prezzo
 * [x] Campi opzionali coerenti
-* [ ] Timestamp normalizzati
+* [x] Timestamp normalizzati
 * [ ] Mapping per ogni provider
 * [x] Test dei dati validi
-* [ ] Test dei dati incompleti
-* [ ] Test dei dati non validi
+* [x] Test dei dati incompleti
+* [x] Test dei dati non validi
 
 #### Evidenze
 
 ```text
 Il modello `SearchResult` e stato introdotto in `backend/app/providers/models.py` come contratto condiviso iniziale dei provider.
-Sono gia presenti validazioni su URL, valuta, prezzo, campi testuali e `relevance_score`, piu un timestamp `collected_at` valorizzato automaticamente.
-Restano aperti la normalizzazione completa dei timestamp, i test sui dati incompleti/non validi e il mapping specifico per provider concreti.
+Sono presenti validazioni su URL, valuta, prezzo, campi testuali, identificativi e `relevance_score`, piu normalizzazione dei timestamp `published_at` e `collected_at` verso UTC.
+I test coprono dati validi, incompleti e non validi. Resta aperto il mapping specifico per provider concreti.
 ```
 
 ---
@@ -1256,6 +1256,10 @@ Questa sezione deve contenere soltanto comandi realmente eseguiti con successo.
 | `poetry run pytest tests/test_app.py tests/test_network.py tests/test_providers.py -q` | OK | 2026-07-20 | Test backend, network layer e contratto provider superati |
 | `poetry run ruff check . --no-cache` | OK | 2026-07-20 | Lint backend superato dopo l'aggiunta del package `app/providers` |
 | `poetry run ruff format --check . --no-cache` | OK | 2026-07-20 | Formattazione backend verificata dopo il contratto provider |
+| `poetry check`           | OK    | 2026-07-20 | Metadata backend verificati dopo il completamento di `SearchResult` |
+| `poetry run pytest tests/test_app.py tests/test_network.py tests/test_providers.py -q` | OK | 2026-07-20 | Test backend, network e validazione `SearchResult` superati |
+| `poetry run ruff check . --no-cache` | OK | 2026-07-20 | Lint backend superato dopo l'estensione delle validazioni di `SearchResult` |
+| `poetry run ruff format --check . --no-cache` | OK | 2026-07-20 | Formattazione backend verificata dopo i nuovi test del modello |
 | `poetry run ruff check . --no-cache` | OK | 2026-07-12 | Lint backend superato |
 | `poetry run ruff format --check . --no-cache` | OK | 2026-07-12 | Formattazione backend verificata |
 | `npm exec vite build -- --configLoader runner` | OK | 2026-07-12 | Build frontend completata |
@@ -1968,6 +1972,75 @@ I modelli normalizzati condivisi sono stati avviati dentro il contratto provider
 
 ```text
 Completare il modello normalizzato condiviso `SearchResult` e i relativi test di validazione.
+```
+
+---
+
+## 2026-07-20 - Validazione del modello normalizzato SearchResult
+
+### Obiettivo
+
+Completare la validazione condivisa di `SearchResult`, normalizzando i timestamp e aggiungendo test per dati incompleti e non validi.
+
+### Requisiti Coinvolti
+
+* REQ-019
+* REQ-024
+* REQ-025
+
+### File Analizzati
+
+* `OBIETTIVI_E_ROADMAP.md`
+* `STACK_E_TECNOLOGIE.md`
+* `RUOLI_E_STANDARD.md`
+* `ARCHITETTURA.md`
+* `CODEX_WORKFLOW.md`
+* `PROGRESS.md`
+* `backend/app/providers/models.py`
+* `backend/tests/test_providers.py`
+* `backend/app/providers/base.py`
+
+### File Creati
+
+* Nessuno
+
+### File Modificati
+
+* `backend/app/providers/models.py`
+* `backend/tests/test_providers.py`
+* `PROGRESS.md`
+
+### File Eliminati
+
+* Nessuno
+
+### Implementazione
+
+Estese le validazioni di `SearchResult` con normalizzazione degli identificativi, pulizia dei campi testuali opzionali e conversione di `published_at` e `collected_at` a timestamp timezone-aware in UTC. I test ora coprono dati validi, campi opzionali incompleti, timestamp normalizzati e payload non validi per valuta, prezzo, rilevanza e URL.
+
+### Test Eseguiti
+
+* `poetry check` - superato
+* `poetry run pytest tests/test_app.py tests/test_network.py tests/test_providers.py -q` - superato
+* `poetry run ruff check . --no-cache` - superato
+* `poetry run ruff format --check . --no-cache` - superato
+
+### Stato Finale
+
+```text
+COMPLETATO
+```
+
+### Problemi Rilevati
+
+```text
+Resta ancora aperto il mapping specifico di `SearchResult` per i provider concreti.
+```
+
+### Prossimo Passo
+
+```text
+Definire il mapping normalizzato del primo provider concreto, iniziando dalla struttura di `EbayProvider`.
 ```
 
 ---

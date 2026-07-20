@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import TYPE_CHECKING
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -10,6 +11,9 @@ from app.network.config import (
     RetrySettings,
     TimeoutSettings,
 )
+
+if TYPE_CHECKING:
+    from app.providers.ebay.config import EbayBrowseApiSettings
 
 
 class Settings(BaseSettings):
@@ -79,6 +83,18 @@ class Settings(BaseSettings):
                 backoff_seconds=self.network_retry_backoff_seconds,
                 jitter_seconds=self.network_retry_jitter_seconds,
             ),
+        )
+
+    def build_ebay_browse_api_settings(self) -> "EbayBrowseApiSettings":
+        from app.providers.ebay.config import EbayApiEnvironment, EbayBrowseApiSettings
+
+        return EbayBrowseApiSettings(
+            environment=EbayApiEnvironment(self.ebay_api_environment),
+            marketplace_id=self.ebay_api_marketplace_id,
+            oauth_scope=self.ebay_api_scope,
+            client_id=self.ebay_api_client_id,
+            client_secret=self.ebay_api_client_secret,
+            access_token=self.ebay_api_access_token,
         )
 
 

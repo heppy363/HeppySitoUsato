@@ -34,6 +34,10 @@ class EbayProvider(MarketplaceProvider):
     def metadata(self) -> ProviderMetadata:
         return self._metadata
 
+    @property
+    def search_adapter(self) -> EbaySearchAdapter:
+        return self._search_adapter
+
     async def search(self, request: SearchRequest) -> list[SearchResult]:
         try:
             raw_results = await self._search_adapter.search(request)

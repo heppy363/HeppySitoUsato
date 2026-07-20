@@ -107,13 +107,13 @@ IN SVILUPPO
 ## Fase Corrente
 
 ```text
-Browse API ufficiale e autenticazione OAuth di EbayProvider
+Wiring runtime di EbayProvider con NetworkClient condiviso
 ```
 
 ## Percentuale Indicativa
 
 ```text
-49%
+52%
 ```
 
 La percentuale è indicativa e non deve essere calcolata esclusivamente sul numero di file creati.
@@ -126,12 +126,13 @@ Deve riflettere il completamento reale delle macro aree previste nella roadmap.
 Data: 2026-07-20
 Responsabile: Codex
 Attivita: Valutazione della Browse API ufficiale eBay e definizione dell'autenticazione OAuth applicativa
+Attivita: Integrazione runtime di EbayProvider dai settings centralizzati con NetworkClient condiviso
 ```
 
 ## Prossimo Passo Approvato
 
 ```text
-Integrare la costruzione di `EbayProvider` reale dai settings centralizzati e dal `NetworkClient` condiviso.
+Introdurre un registry condiviso dei provider runtime da riutilizzare nel futuro Aggregation Engine.
 ```
 
 Codex non deve iniziare automaticamente attività successive oltre il prossimo passo approvato.
@@ -143,9 +144,9 @@ Codex non deve iniziare automaticamente attività successive oltre il prossimo p
 | Macro Area              | Stato        | Avanzamento | Note                              |
 | ----------------------- | ------------ | ----------: | --------------------------------- |
 | Infrastruttura e Docker | IN SVILUPPO  |         45% | Dockerfile backend/frontend allineati, avvio stack da completare |
-| Configurazione Backend  | IN SVILUPPO  |         90% | Poetry, lockfile, struttura FastAPI, provider concreti iniziali, modelli normalizzati validati, settings di rete con strategie proxy tipizzate e configurazione eBay ufficiale |
-| Network Layer           | IN SVILUPPO  |         75% | Client condiviso, configurazione proxy astratta e test mockati presenti; restano da definire i contratti marketplace |
-| Marketplace Provider    | IN SVILUPPO  |         60% | Contratto comune, `EbayProvider` con adapter mockato, adapter Browse API ufficiale, autenticazione applicativa e test presenti; verifica live ancora assente |
+| Configurazione Backend  | IN SVILUPPO  |         92% | Poetry, lockfile, struttura FastAPI, lifecycle applicativo, provider concreti iniziali, modelli normalizzati validati, settings di rete con strategie proxy tipizzate e configurazione eBay ufficiale |
+| Network Layer           | IN SVILUPPO  |         78% | Client condiviso, configurazione proxy astratta, lifecycle con chiusura verificata e test mockati presenti; restano da definire i contratti marketplace |
+| Marketplace Provider    | IN SVILUPPO  |         68% | Contratto comune, `EbayProvider` con factory runtime, adapter mockato, adapter Browse API ufficiale, autenticazione applicativa e test presenti; verifica live ancora assente |
 | Aggregation Engine      | NON INIZIATO |          0% | Nessuna logica di aggregazione    |
 | Cache Redis             | NON INIZIATO |          0% | Solo servizio Docker, cache applicativa assente |
 | PostgreSQL e Migrazioni | NON INIZIATO |          0% | Solo servizio Docker, ORM e Alembic assenti |
@@ -156,7 +157,7 @@ Codex non deve iniziare automaticamente attività successive oltre il prossimo p
 | State Management        | IN SVILUPPO  |         15% | Pinia configurato con store iniziale |
 | Server State            | IN SVILUPPO  |         15% | TanStack Query configurato con query client base |
 | Interfaccia Grafica     | IN SVILUPPO  |         10% | Shell UI iniziale presente, feature di ricerca assenti |
-| Testing                 | IN SVILUPPO  |         54% | Test backend, network layer, contratto provider, validazione modelli e primo provider concreto con adapter mockato e adapter Browse API ufficiale presenti |
+| Testing                 | IN SVILUPPO  |         59% | Test backend, network layer, lifecycle applicativo, contratto provider, validazione modelli e primo provider concreto con factory runtime e adapter ufficiale presenti |
 | Monitoring              | IN SVILUPPO  |         10% | Servizi base presenti, metriche e dashboard da implementare |
 | Sicurezza               | NON INIZIATO |          0% | Controlli non implementati        |
 | Documentazione          | IN SVILUPPO  |         99% | Documenti principali verificati, variabili eBay documentate e progresso aggiornato |
@@ -393,10 +394,10 @@ Verifiche riuscite: `poetry check`, `poetry run pytest tests/test_app.py tests/t
 #### Evidenze
 
 ```text
-File creati: `backend/app/providers/ebay/__init__.py`, `backend/app/providers/ebay/schemas.py`, `backend/app/providers/ebay/mapper.py`, `backend/app/providers/ebay/exceptions.py`, `backend/app/providers/ebay/provider.py`, `backend/app/providers/ebay/adapter.py`, `backend/app/providers/ebay/config.py`, `backend/app/providers/ebay/auth.py`, `backend/tests/test_ebay_provider.py`
-File modificati: `backend/app/core/config.py`, `.env.example`, `backend/app/providers/__init__.py`, `backend/README.md`
-Componenti introdotti: `EbayProvider`, `EbaySearchAdapter`, `MockEbaySearchAdapter`, `EbayBrowseApiSearchAdapter`, `EbayBrowseApiSettings`, `EbayAccessTokenProvider`, `StaticEbayAccessTokenProvider`, `ClientCredentialsEbayAccessTokenProvider`, schemi raw `EbaySearchItem`/`EbaySearchResponse` e risposte ufficiali Browse API/OAuth
-Verifiche riuscite: valutazione della Browse API ufficiale eBay, autenticazione OAuth applicativa via client credentials o token statico, mapping normalizzato, gestione degli errori di rete, gestione di payload incompleti, ricerca tramite adapter mockato e ricerca tramite adapter ufficiale con header `Authorization` e `X-EBAY-C-MARKETPLACE-ID`
+File creati: `backend/app/providers/ebay/__init__.py`, `backend/app/providers/ebay/schemas.py`, `backend/app/providers/ebay/mapper.py`, `backend/app/providers/ebay/exceptions.py`, `backend/app/providers/ebay/provider.py`, `backend/app/providers/ebay/adapter.py`, `backend/app/providers/ebay/config.py`, `backend/app/providers/ebay/auth.py`, `backend/app/providers/ebay/factory.py`, `backend/tests/test_ebay_provider.py`
+File modificati: `backend/app/core/config.py`, `backend/app/main.py`, `backend/app/network/client.py`, `.env.example`, `backend/app/providers/__init__.py`, `backend/tests/test_app.py`, `backend/README.md`
+Componenti introdotti: `EbayProvider`, `EbaySearchAdapter`, `MockEbaySearchAdapter`, `EbayBrowseApiSearchAdapter`, `EbayBrowseApiSettings`, `EbayAccessTokenProvider`, `StaticEbayAccessTokenProvider`, `ClientCredentialsEbayAccessTokenProvider`, `build_ebay_provider`, `maybe_build_ebay_provider`, wiring runtime in `app.state` e schemi raw `EbaySearchItem`/`EbaySearchResponse` con risposte ufficiali Browse API/OAuth
+Verifiche riuscite: valutazione della Browse API ufficiale eBay, autenticazione OAuth applicativa via client credentials o token statico, mapping normalizzato, gestione degli errori di rete, gestione di payload incompleti, ricerca tramite adapter mockato, ricerca tramite adapter ufficiale con header `Authorization` e `X-EBAY-C-MARKETPLACE-ID`, costruzione runtime di `EbayProvider` da `Settings` e riuso di un solo `NetworkClient` condiviso nel lifespan FastAPI
 Limite aperto: l'integrazione eBay resta verificata solo tramite test locali e mock, quindi manca ancora una verifica live con credenziali e accesso effettivo all'API.
 ```
 
@@ -1276,6 +1277,10 @@ Questa sezione deve contenere soltanto comandi realmente eseguiti con successo.
 | `poetry run pytest tests/test_app.py tests/test_network.py tests/test_providers.py tests/test_ebay_provider.py -q` | OK | 2026-07-20 | Test backend, provider condivisi e `EbayProvider` con adapter Browse API ufficiale superati |
 | `poetry run ruff check . --no-cache` | OK | 2026-07-20 | Lint backend superato dopo la configurazione OAuth e Browse API di `EbayProvider` |
 | `poetry run ruff format --check . --no-cache` | OK | 2026-07-20 | Formattazione backend verificata dopo la configurazione OAuth e Browse API di `EbayProvider` |
+| `poetry check`           | OK    | 2026-07-20 | Metadata backend verificati dopo il wiring runtime di `EbayProvider` nel lifespan FastAPI |
+| `poetry run pytest tests/test_app.py tests/test_network.py tests/test_providers.py tests/test_ebay_provider.py -q` | OK | 2026-07-20 | Test backend, lifecycle applicativo e wiring runtime di `EbayProvider` superati |
+| `poetry run ruff check . --no-cache` | OK | 2026-07-20 | Lint backend superato dopo la factory runtime e la registrazione in `app.state` di `EbayProvider` |
+| `poetry run ruff format --check . --no-cache` | OK | 2026-07-20 | Formattazione backend verificata dopo la factory runtime e la registrazione in `app.state` di `EbayProvider` |
 | `poetry run ruff check . --no-cache` | OK | 2026-07-20 | Lint backend superato dopo l'estensione delle validazioni di `SearchResult` |
 | `poetry run ruff format --check . --no-cache` | OK | 2026-07-20 | Formattazione backend verificata dopo i nuovi test del modello |
 | `poetry check`           | OK    | 2026-07-20 | Metadata backend verificati dopo l'introduzione di `EbayProvider` |
@@ -2302,6 +2307,91 @@ La Browse API e l'autenticazione OAuth sono state definite e testate localmente 
 
 ```text
 Integrare la costruzione di `EbayProvider` reale dai settings centralizzati e dal `NetworkClient` condiviso.
+```
+
+---
+
+## 2026-07-20 - Wiring runtime di EbayProvider con NetworkClient condiviso
+
+### Obiettivo
+
+Integrare la costruzione runtime di `EbayProvider` dai settings centralizzati e collegarla al `NetworkClient` condiviso del backend, senza introdurre ancora endpoint o aggregazione.
+
+### Requisiti Coinvolti
+
+* REQ-005
+* REQ-019
+* REQ-024
+* REQ-025
+
+### File Analizzati
+
+* `OBIETTIVI_E_ROADMAP.md`
+* `STACK_E_TECNOLOGIE.md`
+* `RUOLI_E_STANDARD.md`
+* `ARCHITETTURA.md`
+* `CODEX_WORKFLOW.md`
+* `PROGRESS.md`
+* `backend/README.md`
+* `backend/app/core/config.py`
+* `backend/app/main.py`
+* `backend/app/network/client.py`
+* `backend/app/providers/__init__.py`
+* `backend/app/providers/ebay/__init__.py`
+* `backend/app/providers/ebay/adapter.py`
+* `backend/app/providers/ebay/provider.py`
+* `backend/tests/test_app.py`
+* `backend/tests/test_ebay_provider.py`
+
+### File Creati
+
+* `backend/app/providers/ebay/factory.py`
+
+### File Modificati
+
+* `backend/README.md`
+* `backend/app/core/config.py`
+* `backend/app/main.py`
+* `backend/app/network/client.py`
+* `backend/app/providers/__init__.py`
+* `backend/app/providers/ebay/__init__.py`
+* `backend/app/providers/ebay/adapter.py`
+* `backend/app/providers/ebay/provider.py`
+* `backend/tests/test_app.py`
+* `backend/tests/test_ebay_provider.py`
+* `PROGRESS.md`
+
+### File Eliminati
+
+* Nessuno
+
+### Implementazione
+
+Introdotta una factory runtime per `EbayProvider` che costruisce `EbayBrowseApiSettings`, seleziona automaticamente `StaticEbayAccessTokenProvider` o `ClientCredentialsEbayAccessTokenProvider` e collega il provider a un `EbayBrowseApiSearchAdapter` basato sul `NetworkClient` condiviso. Il `lifespan` di FastAPI crea ora un solo `HttpxNetworkClient`, lo espone in `app.state`, registra `EbayProvider` quando la configurazione eBay e disponibile e ne verifica la chiusura corretta a fine ciclo applicativo.
+
+### Test Eseguiti
+
+* `poetry check` - superato
+* `poetry run pytest tests/test_app.py tests/test_network.py tests/test_providers.py tests/test_ebay_provider.py -q` - superato
+* `poetry run ruff check . --no-cache` - superato
+* `poetry run ruff format --check . --no-cache` - superato
+
+### Stato Finale
+
+```text
+COMPLETATO
+```
+
+### Problemi Rilevati
+
+```text
+Il wiring runtime e verificato localmente, ma la registrazione di `EbayProvider` resta condizionata alla presenza di configurazione eBay valida e manca ancora una prova live contro eBay reale.
+```
+
+### Prossimo Passo
+
+```text
+Introdurre un registry condiviso dei provider runtime da riutilizzare nel futuro Aggregation Engine.
 ```
 
 ---

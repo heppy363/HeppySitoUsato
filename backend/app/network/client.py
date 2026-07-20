@@ -37,6 +37,7 @@ class HttpxNetworkClient(NetworkClient):
     ) -> None:
         self._settings = settings
         self._logger = logging.getLogger("app.network.client")
+        self._is_closed = False
         http2_enabled = self._resolve_http2_support(settings)
         proxy_label = settings.proxy_strategy.value
         try:
@@ -131,7 +132,11 @@ class HttpxNetworkClient(NetworkClient):
         raise last_error
 
     async def aclose(self) -> None:
+        if self._is_closed:
+            return
+
         await self._client.aclose()
+        self._is_closed = True
 
     async def __aenter__(self) -> "HttpxNetworkClient":
         return self
@@ -142,6 +147,10 @@ class HttpxNetworkClient(NetworkClient):
     @property
     def proxy_provider(self) -> ProxyProvider:
         return self._proxy_provider
+
+    @property
+    def is_closed(self) -> bool:
+        return self._is_closed
 
     def _should_retry(self, request: NetworkRequest, attempt: int) -> bool:
         return request.retry_on_failure and attempt < self._settings.retry.max_attempts

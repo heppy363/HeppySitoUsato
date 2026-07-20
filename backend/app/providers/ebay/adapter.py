@@ -50,6 +50,18 @@ class EbayBrowseApiSearchAdapter(EbaySearchAdapter):
         self._settings = settings
         self._access_token_provider = access_token_provider
 
+    @property
+    def network_client(self) -> NetworkClient:
+        return self._network_client
+
+    @property
+    def settings(self) -> EbayBrowseApiSettings:
+        return self._settings
+
+    @property
+    def access_token_provider(self) -> EbayAccessTokenProvider:
+        return self._access_token_provider
+
     async def search(self, request: SearchRequest) -> EbaySearchResponse:
         access_token = await self._access_token_provider.get_access_token()
         offset = (request.page - 1) * request.page_size

@@ -21,6 +21,8 @@ from app.providers.ebay import (
     EbayUnavailableError,
     MockEbaySearchAdapter,
     StaticEbayAccessTokenProvider,
+    build_ebay_provider,
+    maybe_build_ebay_provider,
 )
 from app.providers.models import ProviderStatus, SearchRequest
 
@@ -161,6 +163,52 @@ def test_settings_expose_ebay_browse_api_configuration() -> None:
     assert settings.ebay_api_marketplace_id == "EBAY_DE"
     assert settings.ebay_api_scope == "scope:test"
     assert settings.ebay_api_access_token == "static-token"
+    assert settings.build_ebay_browse_api_settings().marketplace_id == "EBAY_DE"
+
+
+def test_build_ebay_provider_uses_shared_network_client_and_static_token() -> None:
+    settings = Settings(
+        ebay_api_marketplace_id="EBAY_DE",
+        ebay_api_access_token="static-token",
+    )
+    network_client = RecordingNetworkClient(responses=[])
+
+    provider = build_ebay_provider(
+        settings=settings,
+        network_client=network_client,
+    )
+
+    assert isinstance(provider.search_adapter, EbayBrowseApiSearchAdapter)
+    assert provider.search_adapter.network_client is network_client
+    assert provider.search_adapter.settings.marketplace_id == "EBAY_DE"
+    assert isinstance(provider.search_adapter.access_token_provider, StaticEbayAccessTokenProvider)
+
+
+def test_build_ebay_provider_uses_client_credentials_when_static_token_is_absent() -> None:
+    settings = Settings(
+        ebay_api_client_id="client-id",
+        ebay_api_client_secret="client-secret",
+    )
+    network_client = RecordingNetworkClient(responses=[])
+
+    provider = build_ebay_provider(
+        settings=settings,
+        network_client=network_client,
+    )
+
+    assert isinstance(
+        provider.search_adapter.access_token_provider,
+        ClientCredentialsEbayAccessTokenProvider,
+    )
+
+
+def test_maybe_build_ebay_provider_returns_none_when_runtime_auth_is_missing() -> None:
+    provider = maybe_build_ebay_provider(
+        settings=Settings(),
+        network_client=RecordingNetworkClient(responses=[]),
+    )
+
+    assert provider is None
 
 
 @pytest.mark.asyncio

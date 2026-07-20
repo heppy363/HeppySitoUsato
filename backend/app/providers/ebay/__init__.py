@@ -15,6 +15,11 @@ from app.providers.ebay.exceptions import (
     EbayUnavailableError,
     map_ebay_network_error,
 )
+from app.providers.ebay.factory import (
+    build_ebay_access_token_provider,
+    build_ebay_provider,
+    maybe_build_ebay_provider,
+)
 from app.providers.ebay.mapper import EbayResultMapper
 from app.providers.ebay.provider import EbayProvider
 from app.providers.ebay.schemas import (
@@ -50,5 +55,8 @@ __all__ = [
     "EbayUnavailableError",
     "MockEbaySearchAdapter",
     "StaticEbayAccessTokenProvider",
+    "build_ebay_access_token_provider",
+    "build_ebay_provider",
+    "maybe_build_ebay_provider",
     "map_ebay_network_error",
 ]

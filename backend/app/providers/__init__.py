@@ -9,6 +9,8 @@ from app.providers.ebay import (
     EbayResultMapper,
     MockEbaySearchAdapter,
     StaticEbayAccessTokenProvider,
+    build_ebay_provider,
+    maybe_build_ebay_provider,
 )
 from app.providers.exceptions import (
     ProviderConfigurationError,
@@ -38,5 +40,7 @@ __all__ = [
     "SearchRequest",
     "SearchResult",
     "StaticEbayAccessTokenProvider",
+    "build_ebay_provider",
+    "maybe_build_ebay_provider",
     "map_network_error",
 ]

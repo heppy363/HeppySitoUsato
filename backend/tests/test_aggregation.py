@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 import pytest
+from pydantic import ValidationError
 
 from app.network.config import TimeoutSettings
 from app.providers import (
@@ -113,6 +114,17 @@ def test_aggregation_request_normalizes_and_deduplicates_platforms() -> None:
     )
 
     assert request.platforms == ("ebay", "subito")
+
+
+def test_aggregation_request_rejects_invalid_price_range() -> None:
+    with pytest.raises(ValidationError) as exc_info:
+        AggregationRequest(
+            search=SearchRequest(query="RTX 3090"),
+            min_price=400.0,
+            max_price=300.0,
+        )
+
+    assert "min_price cannot be greater than max_price" in str(exc_info.value)
 
 
 def test_registry_aggregation_service_selects_all_registered_providers_by_default() -> None:
@@ -333,30 +345,155 @@ async def test_registry_aggregation_service_keeps_results_separate_across_platfo
     response = await service.search(AggregationRequest(search=SearchRequest(query="RTX 3090")))
 
     assert response.failures == ()
+    assert tuple(
+        (result.platform, result.external_id, result.title) for result in response.results
+    ) == (
+        ("ebay", "shared-1", "RTX 3090 eBay"),
+        ("subito", "shared-1", "RTX 3090 Subito"),
+    )
+
+
+@pytest.mark.asyncio
+async def test_registry_aggregation_service_filters_results_by_price_range() -> None:
+    service = RegistryAggregationService(
+        ProviderRegistry(
+            [
+                ResultSetAggregationDummyProvider(
+                    platform="ebay",
+                    results=[
+                        SearchResult(
+                            id="ebay:budget",
+                            external_id="budget",
+                            title="RTX 3090 budget",
+                            price=90.0,
+                            currency="EUR",
+                            platform="ebay",
+                            url="https://example.com/items/budget",
+                        ),
+                        SearchResult(
+                            id="ebay:target",
+                            external_id="target",
+                            title="RTX 3090 target",
+                            price=150.0,
+                            currency="EUR",
+                            platform="ebay",
+                            url="https://example.com/items/target",
+                        ),
+                        SearchResult(
+                            id="ebay:premium",
+                            external_id="premium",
+                            title="RTX 3090 premium",
+                            price=260.0,
+                            currency="EUR",
+                            platform="ebay",
+                            url="https://example.com/items/premium",
+                        ),
+                    ],
+                )
+            ]
+        ),
+        ranking_service=PassthroughRankingService(),
+    )
+
+    response = await service.search(
+        AggregationRequest(
+            search=SearchRequest(query="RTX 3090"),
+            min_price=100.0,
+            max_price=200.0,
+        )
+    )
+
+    assert response.failures == ()
     assert response.results == (
         SearchResult(
-            id="ebay:1",
-            external_id="shared-1",
-            title="RTX 3090 eBay",
-            price=100.0,
+            id="ebay:target",
+            external_id="target",
+            title="RTX 3090 target",
+            price=150.0,
             currency="EUR",
             platform="ebay",
-            url="https://example.com/ebay/items/1",
-        ),
-        SearchResult(
-            id="subito:1",
-            external_id="shared-1",
-            title="RTX 3090 Subito",
-            price=100.0,
-            currency="EUR",
-            platform="subito",
-            url="https://example.com/subito/items/1",
+            url="https://example.com/items/target",
         ),
     )
 
 
 @pytest.mark.asyncio
-async def test_registry_aggregation_service_applies_initial_ranking_without_reordering() -> None:
+async def test_registry_aggregation_service_applies_deterministic_final_ordering() -> None:
+    collected_at = datetime(2026, 7, 21, 12, 0, tzinfo=UTC)
+    recent_published_at = datetime(2026, 7, 20, 12, 0, tzinfo=UTC)
+    older_published_at = datetime(2026, 7, 18, 12, 0, tzinfo=UTC)
+    service = RegistryAggregationService(
+        ProviderRegistry(
+            [
+                ResultSetAggregationDummyProvider(
+                    platform="ebay",
+                    results=[
+                        SearchResult(
+                            id="ebay:recent-expensive",
+                            external_id="recent-expensive",
+                            title="RTX 3090 recent expensive",
+                            price=180.0,
+                            currency="EUR",
+                            platform="ebay",
+                            url="https://example.com/items/recent-expensive",
+                            published_at=recent_published_at,
+                            collected_at=collected_at,
+                            relevance_score=0.6,
+                        ),
+                        SearchResult(
+                            id="ebay:top-score",
+                            external_id="top-score",
+                            title="RTX 3090 top score",
+                            price=400.0,
+                            currency="EUR",
+                            platform="ebay",
+                            url="https://example.com/items/top-score",
+                            published_at=older_published_at,
+                            collected_at=collected_at,
+                            relevance_score=0.9,
+                        ),
+                        SearchResult(
+                            id="ebay:recent-cheap",
+                            external_id="recent-cheap",
+                            title="RTX 3090 recent cheap",
+                            price=120.0,
+                            currency="EUR",
+                            platform="ebay",
+                            url="https://example.com/items/recent-cheap",
+                            published_at=recent_published_at,
+                            collected_at=collected_at,
+                            relevance_score=0.6,
+                        ),
+                        SearchResult(
+                            id="ebay:no-date",
+                            external_id="no-date",
+                            title="RTX 3090 no date",
+                            price=80.0,
+                            currency="EUR",
+                            platform="ebay",
+                            url="https://example.com/items/no-date",
+                            collected_at=collected_at,
+                            relevance_score=0.6,
+                        ),
+                    ],
+                )
+            ]
+        ),
+        ranking_service=PassthroughRankingService(),
+    )
+
+    response = await service.search(AggregationRequest(search=SearchRequest(query="RTX 3090")))
+
+    assert tuple(result.external_id for result in response.results) == (
+        "top-score",
+        "recent-cheap",
+        "recent-expensive",
+        "no-date",
+    )
+
+
+@pytest.mark.asyncio
+async def test_registry_aggregation_service_applies_initial_ranking_scores() -> None:
     collected_at = datetime(2026, 7, 21, 12, 0, tzinfo=UTC)
     recent_published_at = datetime(2026, 7, 20, 12, 0, tzinfo=UTC)
     stale_published_at = datetime(2026, 6, 1, 12, 0, tzinfo=UTC)
@@ -424,15 +561,9 @@ async def test_registry_aggregation_service_applies_initial_ranking_without_reor
 
     response = await service.search(AggregationRequest(search=SearchRequest(query="RTX 3090")))
 
-    assert tuple(result.external_id for result in response.results) == (
-        "exact",
-        "partial",
-        "fresh-complete",
-        "stale-incomplete",
-    )
-
     scores = {result.external_id: result.relevance_score for result in response.results}
 
+    assert set(scores) == {"exact", "partial", "fresh-complete", "stale-incomplete"}
     assert 0.0 <= min(scores.values()) <= max(scores.values()) <= 1.0
     assert scores["exact"] > scores["partial"]
     assert scores["fresh-complete"] > scores["stale-incomplete"]

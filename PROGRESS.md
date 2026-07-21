@@ -107,13 +107,13 @@ IN SVILUPPO
 ## Fase Corrente
 
 ```text
-Ranking iniziale dei risultati aggregati
+Ordinamento finale iniziale dei risultati aggregati
 ```
 
 ## Percentuale Indicativa
 
 ```text
-64%
+68%
 ```
 
 La percentuale è indicativa e non deve essere calcolata esclusivamente sul numero di file creati.
@@ -125,13 +125,13 @@ Deve riflettere il completamento reale delle macro aree previste nella roadmap.
 ```text
 Data: 2026-07-21
 Responsabile: Codex
-Attivita: Introduzione di un `RankingService` euristico per arricchire i risultati aggregati con uno score iniziale basato su query, freschezza, completezza e prezzo
+Attivita: Introduzione dell'ordinamento finale deterministico dei risultati aggregati dopo ranking e filtri
 ```
 
 ## Prossimo Passo Approvato
 
 ```text
-Applicare i primi filtri ai risultati aggregati normalizzati.
+Generare le prime metriche dell'Aggregation Engine.
 ```
 
 Codex non deve iniziare automaticamente attività successive oltre il prossimo passo approvato.
@@ -146,7 +146,7 @@ Codex non deve iniziare automaticamente attività successive oltre il prossimo p
 | Configurazione Backend  | IN SVILUPPO  |         95% | Poetry, lockfile, struttura FastAPI, lifecycle applicativo, registry provider runtime, primi contratti di aggregazione con esecuzione parallela, modelli normalizzati validati e configurazione eBay ufficiale |
 | Network Layer           | IN SVILUPPO  |         79% | Client condiviso, configurazione proxy astratta, lifecycle con chiusura verificata e test mockati presenti; restano da definire i contratti marketplace |
 | Marketplace Provider    | IN SVILUPPO  |         72% | Contratto comune, `ProviderRegistry` runtime, `EbayProvider` con factory runtime, adapter mockato, adapter Browse API ufficiale e test presenti; verifica live ancora assente |
-| Aggregation Engine      | IN SVILUPPO  |         52% | Contratto registry-backed presente con selezione provider, `asyncio.gather`, isolamento dei fallimenti, raccolta di risultati parziali, deduplicazione per `(platform, external_id)`, primo merge conservativo e ranking euristico iniziale; filtri, ordinamento e metriche ancora assenti |
+| Aggregation Engine      | IN SVILUPPO  |         72% | Contratto registry-backed presente con selezione provider, `asyncio.gather`, isolamento dei fallimenti, raccolta di risultati parziali, deduplicazione per `(platform, external_id)`, primo merge conservativo, ranking euristico iniziale, primi filtri prezzo e ordinamento finale deterministico; metriche ancora assenti |
 | Cache Redis             | NON INIZIATO |          0% | Solo servizio Docker, cache applicativa assente |
 | PostgreSQL e Migrazioni | NON INIZIATO |          0% | Solo servizio Docker, ORM e Alembic assenti |
 | Worker e Code           | NON INIZIATO |          0% | Solo placeholder Docker, tecnologia non selezionata |
@@ -156,7 +156,7 @@ Codex non deve iniziare automaticamente attività successive oltre il prossimo p
 | State Management        | IN SVILUPPO  |         15% | Pinia configurato con store iniziale |
 | Server State            | IN SVILUPPO  |         15% | TanStack Query configurato con query client base |
 | Interfaccia Grafica     | IN SVILUPPO  |         10% | Shell UI iniziale presente, feature di ricerca assenti |
-| Testing                 | IN SVILUPPO  |         74% | Test backend, network layer, lifecycle applicativo, `ProviderRegistry`, aggregazione parallela con errore parziale, deduplicazione, merge iniziale, ranking euristico e validazione modelli con primo provider concreto e adapter ufficiale presenti |
+| Testing                 | IN SVILUPPO  |         78% | Test backend, network layer, lifecycle applicativo, `ProviderRegistry`, aggregazione parallela con errore parziale, deduplicazione, merge iniziale, ranking euristico, filtri prezzo, ordinamento finale e validazione modelli con primo provider concreto e adapter ufficiale presenti |
 | Monitoring              | IN SVILUPPO  |         10% | Servizi base presenti, metriche e dashboard da implementare |
 | Sicurezza               | NON INIZIATO |          0% | Controlli non implementati        |
 | Documentazione          | IN SVILUPPO  |         99% | Documenti principali verificati, variabili eBay documentate e progresso aggiornato |
@@ -513,8 +513,8 @@ I test coprono dati validi, incompleti e non validi. Resta aperto il mapping spe
 * [x] Eliminare duplicati
 * [x] Normalizzare risultati
 * [x] Applicare ranking
-* [ ] Applicare filtri
-* [ ] Applicare ordinamento
+* [x] Applicare filtri
+* [x] Applicare ordinamento
 * [ ] Generare metriche
 * [x] Aggiungere test di concorrenza
 * [x] Aggiungere test di errore parziale
@@ -531,8 +531,8 @@ Il fallimento di un provider non deve causare il fallimento degli altri provider
 File creati: `backend/app/services/aggregation.py`, `backend/app/services/ranking.py`, `backend/tests/test_aggregation.py`
 File modificati: `backend/app/services/__init__.py`, `backend/app/main.py`, `backend/tests/test_app.py`, `backend/tests/test_providers.py`, `backend/README.md`
 Componenti introdotti: `AggregationRequest`, `AggregationResponse`, `AggregationProviderFailure`, `AggregationService`, `RegistryAggregationService`, `AggregationProviderSelectionError`, `RankingService` e `HeuristicRankingService`
-Verifiche riuscite: normalizzazione e deduplicazione dei platform target, selezione dei provider registrati, esecuzione parallela via `asyncio.gather`, isolamento dei fallimenti, raccolta di risultati parziali, deduplicazione della risposta aggregata per `(platform, external_id)`, primo merge conservativo dei campi piu informativi e ranking iniziale basato su query, freschezza, completezza e prezzo
-Limite aperto: il contratto di aggregazione non applica ancora filtri, ordinamento o metriche della risposta.
+Verifiche riuscite: normalizzazione e deduplicazione dei platform target, selezione dei provider registrati, esecuzione parallela via `asyncio.gather`, isolamento dei fallimenti, raccolta di risultati parziali, deduplicazione della risposta aggregata per `(platform, external_id)`, primo merge conservativo dei campi piu informativi, ranking iniziale basato su query, freschezza, completezza e prezzo, primi filtri prezzo tramite `min_price` e `max_price` e ordinamento finale deterministico per rilevanza, freschezza, raccolta, prezzo e chiavi stabili
+Limite aperto: il contratto di aggregazione non genera ancora metriche della risposta.
 ```
 
 ---
@@ -550,22 +550,22 @@ Limite aperto: il contratto di aggregazione non applica ancora filtri, ordinamen
 * [x] Prezzo
 * [ ] Affidabilità del venditore, quando disponibile
 * [ ] Penalizzazione dei risultati non pertinenti
-* [ ] Ordinamento deterministico
+* [x] Ordinamento deterministico
 
 ## Test Previsti
 
 * [x] Titolo esatto prima di titolo parziale
 * [ ] Risultato recente prima di risultato vecchio, a parità di rilevanza
 * [x] Risultato incompleto penalizzato
-* [ ] Ordinamento stabile
+* [x] Ordinamento stabile
 * [x] Nessun punteggio fuori intervallo
 
 #### Evidenze
 
 ```text
 Il ranking iniziale e implementato in `backend/app/services/ranking.py` tramite `RankingService` e `HeuristicRankingService`.
-Lo score finale arricchisce `SearchResult.relevance_score` senza riordinare ancora la risposta, combinando match sulla query, freschezza, completezza minima del dato e prezzo relativo nel set aggregato.
-I test coprono mantenimento dell'ordine originale, punteggi nel range [0, 1], titolo esatto sopra titolo parziale, risultato recente e completo sopra risultato vecchio e incompleto e preservazione di un punteggio provider gia piu alto.
+Lo score finale arricchisce `SearchResult.relevance_score` e viene poi usato dall'Aggregation Engine per un ordinamento finale deterministico basato su rilevanza, freschezza, raccolta, prezzo e chiavi stabili.
+I test coprono punteggi nel range [0, 1], titolo esatto sopra titolo parziale, risultato recente e completo sopra risultato vecchio e incompleto, preservazione di un punteggio provider gia piu alto e ordinamento stabile del risultato finale.
 ```
 
 ---
@@ -1318,6 +1318,14 @@ Questa sezione deve contenere soltanto comandi realmente eseguiti con successo.
 | `poetry run pytest tests/test_app.py tests/test_network.py tests/test_providers.py tests/test_ebay_provider.py tests/test_aggregation.py -q` | OK | 2026-07-21 | Test backend, ranking euristico iniziale e preservazione dei punteggi provider superati |
 | `poetry run ruff check . --no-cache` | OK | 2026-07-21 | Lint backend superato dopo l'aggiunta di `HeuristicRankingService` |
 | `poetry run ruff format --check . --no-cache` | OK | 2026-07-21 | Formattazione backend verificata dopo i test del ranking iniziale |
+| `poetry check`           | OK    | 2026-07-21 | Metadata backend verificati dopo l'introduzione dei filtri prezzo nell'Aggregation Engine |
+| `poetry run pytest tests/test_app.py tests/test_network.py tests/test_providers.py tests/test_ebay_provider.py tests/test_aggregation.py -q` | OK | 2026-07-21 | Test backend, filtro prezzo aggregato e validazione del range prezzi superati |
+| `poetry run ruff check . --no-cache` | OK | 2026-07-21 | Lint backend superato dopo `min_price` e `max_price` in `AggregationRequest` |
+| `poetry run ruff format --check . --no-cache` | OK | 2026-07-21 | Formattazione backend verificata dopo i test dei filtri aggregati |
+| `poetry check`           | OK    | 2026-07-21 | Metadata backend verificati dopo l'introduzione dell'ordinamento finale nell'Aggregation Engine |
+| `poetry run pytest tests/test_app.py tests/test_network.py tests/test_providers.py tests/test_ebay_provider.py tests/test_aggregation.py -q` | OK | 2026-07-21 | Test backend, ordinamento finale deterministico e stabilita dei risultati aggregati superati |
+| `poetry run ruff check . --no-cache` | OK | 2026-07-21 | Lint backend superato dopo l'ordinamento finale dei risultati aggregati |
+| `poetry run ruff format --check . --no-cache` | OK | 2026-07-21 | Formattazione backend verificata dopo i test dell'ordinamento aggregato |
 | `poetry run ruff check . --no-cache` | OK | 2026-07-20 | Lint backend superato dopo l'estensione delle validazioni di `SearchResult` |
 | `poetry run ruff format --check . --no-cache` | OK | 2026-07-20 | Formattazione backend verificata dopo i nuovi test del modello |
 | `poetry check`           | OK    | 2026-07-20 | Metadata backend verificati dopo l'introduzione di `EbayProvider` |
@@ -2803,6 +2811,150 @@ Il ranking iniziale e presente, ma mancano ancora i filtri applicativi, l'ordina
 
 ```text
 Applicare i primi filtri ai risultati aggregati normalizzati.
+```
+
+---
+
+## 2026-07-21 - Filtri iniziali dei risultati aggregati
+
+### Obiettivo
+
+Introdurre i primi filtri applicativi nell'Aggregation Engine sopra risultati gia normalizzati, mantenendo il perimetro minimo sui filtri prezzo.
+
+### Requisiti Coinvolti
+
+* REQ-005
+* REQ-019
+* REQ-024
+* REQ-025
+
+### File Analizzati
+
+* `OBIETTIVI_E_ROADMAP.md`
+* `STACK_E_TECNOLOGIE.md`
+* `RUOLI_E_STANDARD.md`
+* `ARCHITETTURA.md`
+* `CODEX_WORKFLOW.md`
+* `PROGRESS.md`
+* `backend/README.md`
+* `backend/app/providers/models.py`
+* `backend/app/services/aggregation.py`
+* `backend/tests/test_aggregation.py`
+
+### File Creati
+
+* Nessuno
+
+### File Modificati
+
+* `backend/README.md`
+* `backend/app/services/aggregation.py`
+* `backend/tests/test_aggregation.py`
+* `PROGRESS.md`
+
+### File Eliminati
+
+* Nessuno
+
+### Implementazione
+
+`AggregationRequest` supporta ora `min_price` e `max_price` con validazione del range. `RegistryAggregationService` applica i primi filtri prezzo dopo la normalizzazione dei risultati aggregati e prima del ranking, cosi i punteggi vengono calcolati solo sul sottoinsieme effettivamente restituito all'utente. Il filtro piattaforma continua a essere gestito a monte tramite selezione dei provider target.
+
+### Test Eseguiti
+
+* `poetry check` - superato
+* `poetry run pytest tests/test_app.py tests/test_network.py tests/test_providers.py tests/test_ebay_provider.py tests/test_aggregation.py -q` - superato
+* `poetry run ruff check . --no-cache` - superato
+* `poetry run ruff format --check . --no-cache` - superato
+
+### Stato Finale
+
+```text
+COMPLETATO
+```
+
+### Problemi Rilevati
+
+```text
+I primi filtri prezzo sono presenti, ma mancano ancora l'ordinamento finale della risposta aggregata e le metriche dell'Aggregation Engine.
+```
+
+### Prossimo Passo
+
+```text
+Applicare il primo ordinamento finale dei risultati aggregati.
+```
+
+---
+
+## 2026-07-21 - Ordinamento finale iniziale dei risultati aggregati
+
+### Obiettivo
+
+Introdurre un ordinamento finale deterministico dei risultati aggregati, mantenendo separato l'ordinamento dal ranking e dai futuri criteri configurabili.
+
+### Requisiti Coinvolti
+
+* REQ-005
+* REQ-019
+* REQ-024
+* REQ-025
+
+### File Analizzati
+
+* `OBIETTIVI_E_ROADMAP.md`
+* `STACK_E_TECNOLOGIE.md`
+* `RUOLI_E_STANDARD.md`
+* `ARCHITETTURA.md`
+* `CODEX_WORKFLOW.md`
+* `PROGRESS.md`
+* `backend/README.md`
+* `backend/app/services/aggregation.py`
+* `backend/app/services/ranking.py`
+* `backend/tests/test_aggregation.py`
+
+### File Creati
+
+* Nessuno
+
+### File Modificati
+
+* `backend/README.md`
+* `backend/app/services/aggregation.py`
+* `backend/tests/test_aggregation.py`
+* `PROGRESS.md`
+
+### File Eliminati
+
+* Nessuno
+
+### Implementazione
+
+`RegistryAggregationService` applica ora un ordinamento finale deterministico dopo ranking e filtri. L'ordinamento privilegia `relevance_score`, presenza e freschezza di `published_at`, `collected_at`, prezzo e chiavi stabili (`platform`, `external_id`), cosi la risposta aggregata resta prevedibile anche a parita di punteggio.
+
+### Test Eseguiti
+
+* `poetry check` - superato
+* `poetry run pytest tests/test_app.py tests/test_network.py tests/test_providers.py tests/test_ebay_provider.py tests/test_aggregation.py -q` - superato
+* `poetry run ruff check . --no-cache` - superato
+* `poetry run ruff format --check . --no-cache` - superato
+
+### Stato Finale
+
+```text
+COMPLETATO
+```
+
+### Problemi Rilevati
+
+```text
+L'ordinamento finale deterministico e presente, ma mancano ancora le metriche dell'Aggregation Engine e future modalita di ordinamento configurabili per l'utente.
+```
+
+### Prossimo Passo
+
+```text
+Generare le prime metriche dell'Aggregation Engine.
 ```
 
 ---

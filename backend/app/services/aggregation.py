@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.providers import (
     MarketplaceProvider,
@@ -18,6 +18,8 @@ from app.services.ranking import HeuristicRankingService, RankingService
 class AggregationRequest(BaseModel):
     search: SearchRequest
     platforms: tuple[str, ...] | None = Field(default=None)
+    min_price: float | None = Field(default=None, ge=0)
+    max_price: float | None = Field(default=None, ge=0)
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -36,6 +38,13 @@ class AggregationRequest(BaseModel):
                 normalized_platforms.append(normalized)
 
         return tuple(normalized_platforms) or None
+
+    @model_validator(mode="after")
+    def validate_price_range(self) -> "AggregationRequest":
+        if self.min_price is not None and self.max_price is not None:
+            if self.min_price > self.max_price:
+                raise ValueError("min_price cannot be greater than max_price")
+        return self
 
 
 class AggregationError(Exception):
@@ -139,9 +148,11 @@ class RegistryAggregationService(AggregationService):
             results.extend(execution)
 
         normalized_results = self._normalize_results(results)
-        ranked_results = self._ranking_service.rank(request.search, normalized_results)
+        filtered_results = self._filter_results(request, normalized_results)
+        ranked_results = self._ranking_service.rank(request.search, filtered_results)
+        ordered_results = self._order_results(ranked_results)
 
-        return AggregationResponse(results=ranked_results, failures=tuple(failures))
+        return AggregationResponse(results=ordered_results, failures=tuple(failures))
 
     @staticmethod
     def _build_failure(
@@ -178,6 +189,44 @@ class RegistryAggregationService(AggregationService):
             merged_results[key] = cls._merge_results(existing, result)
 
         return tuple(merged_results[key] for key in ordered_keys)
+
+    @staticmethod
+    def _filter_results(
+        request: AggregationRequest,
+        results: Iterable[SearchResult],
+    ) -> tuple[SearchResult, ...]:
+        filtered_results: list[SearchResult] = []
+
+        for result in results:
+            if request.min_price is not None and result.price < request.min_price:
+                continue
+            if request.max_price is not None and result.price > request.max_price:
+                continue
+            filtered_results.append(result)
+
+        return tuple(filtered_results)
+
+    @classmethod
+    def _order_results(cls, results: Iterable[SearchResult]) -> tuple[SearchResult, ...]:
+        return tuple(sorted(results, key=cls._result_sort_key))
+
+    @staticmethod
+    def _result_sort_key(result: SearchResult) -> tuple[float, int, float, float, float, str, str]:
+        published_present = 0 if result.published_at is not None else 1
+        published_timestamp = (
+            -result.published_at.timestamp() if result.published_at is not None else 0.0
+        )
+        collected_timestamp = -result.collected_at.timestamp()
+
+        return (
+            -result.relevance_score,
+            published_present,
+            published_timestamp,
+            collected_timestamp,
+            result.price,
+            result.platform,
+            result.external_id,
+        )
 
     @staticmethod
     def _result_key(result: SearchResult) -> tuple[str, str]:

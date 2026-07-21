@@ -9,6 +9,7 @@ from app.services.aggregation import (
     AggregationService,
     RegistryAggregationService,
 )
+from app.services.ranking import HeuristicRankingService, RankingService
 
 __all__ = [
     "AggregationError",
@@ -17,5 +18,7 @@ __all__ = [
     "AggregationRequest",
     "AggregationResponse",
     "AggregationService",
+    "HeuristicRankingService",
+    "RankingService",
     "RegistryAggregationService",
 ]

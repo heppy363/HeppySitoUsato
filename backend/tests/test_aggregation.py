@@ -18,6 +18,7 @@ from app.services import (
     AggregationProviderSelectionError,
     AggregationRequest,
     AggregationResponse,
+    RankingService,
     RegistryAggregationService,
 )
 
@@ -96,6 +97,15 @@ class ResultSetAggregationDummyProvider(AggregationDummyProvider):
         return list(self._results)
 
 
+class PassthroughRankingService(RankingService):
+    def rank(
+        self,
+        request: SearchRequest,
+        results: list[SearchResult] | tuple[SearchResult, ...],
+    ) -> tuple[SearchResult, ...]:
+        return tuple(results)
+
+
 def test_aggregation_request_normalizes_and_deduplicates_platforms() -> None:
     request = AggregationRequest(
         search=SearchRequest(query="RTX 3090"),
@@ -108,7 +118,10 @@ def test_aggregation_request_normalizes_and_deduplicates_platforms() -> None:
 def test_registry_aggregation_service_selects_all_registered_providers_by_default() -> None:
     ebay_provider = AggregationDummyProvider(platform="ebay")
     subito_provider = AggregationDummyProvider(platform="subito")
-    service = RegistryAggregationService(ProviderRegistry([ebay_provider, subito_provider]))
+    service = RegistryAggregationService(
+        ProviderRegistry([ebay_provider, subito_provider]),
+        ranking_service=PassthroughRankingService(),
+    )
 
     selected = service.select_providers(AggregationRequest(search=SearchRequest(query="RTX 3090")))
 
@@ -118,7 +131,10 @@ def test_registry_aggregation_service_selects_all_registered_providers_by_defaul
 def test_registry_aggregation_service_selects_requested_platforms_in_declared_order() -> None:
     ebay_provider = AggregationDummyProvider(platform="ebay")
     subito_provider = AggregationDummyProvider(platform="subito")
-    service = RegistryAggregationService(ProviderRegistry([ebay_provider, subito_provider]))
+    service = RegistryAggregationService(
+        ProviderRegistry([ebay_provider, subito_provider]),
+        ranking_service=PassthroughRankingService(),
+    )
 
     selected = service.select_providers(
         AggregationRequest(
@@ -132,7 +148,8 @@ def test_registry_aggregation_service_selects_requested_platforms_in_declared_or
 
 def test_registry_aggregation_service_rejects_unknown_platforms() -> None:
     service = RegistryAggregationService(
-        ProviderRegistry([AggregationDummyProvider(platform="ebay")])
+        ProviderRegistry([AggregationDummyProvider(platform="ebay")]),
+        ranking_service=PassthroughRankingService(),
     )
 
     with pytest.raises(AggregationProviderSelectionError) as exc_info:
@@ -155,7 +172,8 @@ async def test_registry_aggregation_service_executes_selected_providers_in_paral
                 ParallelAggregationDummyProvider(platform="ebay", state=state),
                 ParallelAggregationDummyProvider(platform="subito", state=state),
             ]
-        )
+        ),
+        ranking_service=PassthroughRankingService(),
     )
 
     response = await service.search(AggregationRequest(search=SearchRequest(query="RTX 3090")))
@@ -172,7 +190,10 @@ async def test_registry_aggregation_service_collects_partial_results_when_one_pr
 ):
     ebay_provider = AggregationDummyProvider(platform="ebay")
     failing_provider = FailingAggregationDummyProvider(platform="subito")
-    service = RegistryAggregationService(ProviderRegistry([ebay_provider, failing_provider]))
+    service = RegistryAggregationService(
+        ProviderRegistry([ebay_provider, failing_provider]),
+        ranking_service=PassthroughRankingService(),
+    )
 
     response = await service.search(AggregationRequest(search=SearchRequest(query="RTX 3090")))
 
@@ -242,7 +263,8 @@ async def test_registry_aggregation_service_deduplicates_and_merges_results() ->
                     ],
                 )
             ]
-        )
+        ),
+        ranking_service=PassthroughRankingService(),
     )
 
     response = await service.search(AggregationRequest(search=SearchRequest(query="RTX 3090")))
@@ -304,7 +326,8 @@ async def test_registry_aggregation_service_keeps_results_separate_across_platfo
                     ],
                 ),
             ]
-        )
+        ),
+        ranking_service=PassthroughRankingService(),
     )
 
     response = await service.search(AggregationRequest(search=SearchRequest(query="RTX 3090")))
@@ -328,5 +351,132 @@ async def test_registry_aggregation_service_keeps_results_separate_across_platfo
             currency="EUR",
             platform="subito",
             url="https://example.com/subito/items/1",
+        ),
+    )
+
+
+@pytest.mark.asyncio
+async def test_registry_aggregation_service_applies_initial_ranking_without_reordering() -> None:
+    collected_at = datetime(2026, 7, 21, 12, 0, tzinfo=UTC)
+    recent_published_at = datetime(2026, 7, 20, 12, 0, tzinfo=UTC)
+    stale_published_at = datetime(2026, 6, 1, 12, 0, tzinfo=UTC)
+    service = RegistryAggregationService(
+        ProviderRegistry(
+            [
+                ResultSetAggregationDummyProvider(
+                    platform="ebay",
+                    results=[
+                        SearchResult(
+                            id="ebay:exact",
+                            external_id="exact",
+                            title="RTX 3090",
+                            price=900.0,
+                            currency="EUR",
+                            platform="ebay",
+                            url="https://example.com/items/exact",
+                            published_at=recent_published_at,
+                            collected_at=collected_at,
+                        ),
+                        SearchResult(
+                            id="ebay:partial",
+                            external_id="partial",
+                            title="Scheda video NVIDIA 3090",
+                            price=900.0,
+                            currency="EUR",
+                            platform="ebay",
+                            url="https://example.com/items/partial",
+                            published_at=recent_published_at,
+                            collected_at=collected_at,
+                        ),
+                        SearchResult(
+                            id="ebay:fresh-complete",
+                            external_id="fresh-complete",
+                            title="RTX 3090 Founders Edition",
+                            description="Annuncio per RTX 3090 con scatola originale",
+                            price=750.0,
+                            currency="EUR",
+                            platform="ebay",
+                            location="Milano",
+                            url="https://example.com/items/fresh-complete",
+                            image_url="https://example.com/items/fresh-complete.jpg",
+                            seller_name="Venditore affidabile",
+                            seller_rating=4.9,
+                            condition="Usato garantito",
+                            published_at=recent_published_at,
+                            collected_at=collected_at,
+                        ),
+                        SearchResult(
+                            id="ebay:stale-incomplete",
+                            external_id="stale-incomplete",
+                            title="RTX 3090 Founders Edition",
+                            price=750.0,
+                            currency="EUR",
+                            platform="ebay",
+                            url="https://example.com/items/stale-incomplete",
+                            published_at=stale_published_at,
+                            collected_at=collected_at,
+                        ),
+                    ],
+                )
+            ]
+        )
+    )
+
+    response = await service.search(AggregationRequest(search=SearchRequest(query="RTX 3090")))
+
+    assert tuple(result.external_id for result in response.results) == (
+        "exact",
+        "partial",
+        "fresh-complete",
+        "stale-incomplete",
+    )
+
+    scores = {result.external_id: result.relevance_score for result in response.results}
+
+    assert 0.0 <= min(scores.values()) <= max(scores.values()) <= 1.0
+    assert scores["exact"] > scores["partial"]
+    assert scores["fresh-complete"] > scores["stale-incomplete"]
+
+
+@pytest.mark.asyncio
+async def test_registry_aggregation_service_preserves_higher_provider_relevance_score() -> None:
+    collected_at = datetime(2026, 7, 21, 12, 0, tzinfo=UTC)
+    service = RegistryAggregationService(
+        ProviderRegistry(
+            [
+                ResultSetAggregationDummyProvider(
+                    platform="ebay",
+                    results=[
+                        SearchResult(
+                            id="ebay:provider-ranked",
+                            external_id="provider-ranked",
+                            title="Oggetto generico",
+                            price=1000.0,
+                            currency="EUR",
+                            platform="ebay",
+                            url="https://example.com/items/provider-ranked",
+                            collected_at=collected_at,
+                            relevance_score=0.93,
+                        )
+                    ],
+                )
+            ]
+        )
+    )
+
+    response = await service.search(AggregationRequest(search=SearchRequest(query="RTX 3090")))
+
+    assert response.failures == ()
+    assert response.results == (
+        SearchResult(
+            id="ebay:provider-ranked",
+            external_id="provider-ranked",
+            title="Oggetto generico",
+            price=1000.0,
+            currency="EUR",
+            platform="ebay",
+            url="https://example.com/items/provider-ranked",
+            collected_at=collected_at,
+            relevance_score=0.93,
         ),
     )

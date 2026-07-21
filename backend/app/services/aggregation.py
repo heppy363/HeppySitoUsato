@@ -12,6 +12,7 @@ from app.providers import (
     SearchRequest,
     SearchResult,
 )
+from app.services.ranking import HeuristicRankingService, RankingService
 
 
 class AggregationRequest(BaseModel):
@@ -70,6 +71,11 @@ class AggregationService(ABC):
     def provider_registry(self) -> ProviderRegistry:
         raise NotImplementedError
 
+    @property
+    @abstractmethod
+    def ranking_service(self) -> RankingService:
+        raise NotImplementedError
+
     @abstractmethod
     def select_providers(self, request: AggregationRequest) -> tuple[MarketplaceProvider, ...]:
         raise NotImplementedError
@@ -80,12 +86,21 @@ class AggregationService(ABC):
 
 
 class RegistryAggregationService(AggregationService):
-    def __init__(self, provider_registry: ProviderRegistry) -> None:
+    def __init__(
+        self,
+        provider_registry: ProviderRegistry,
+        ranking_service: RankingService | None = None,
+    ) -> None:
         self._provider_registry = provider_registry
+        self._ranking_service = ranking_service or HeuristicRankingService()
 
     @property
     def provider_registry(self) -> ProviderRegistry:
         return self._provider_registry
+
+    @property
+    def ranking_service(self) -> RankingService:
+        return self._ranking_service
 
     def select_providers(self, request: AggregationRequest) -> tuple[MarketplaceProvider, ...]:
         if request.platforms is None:
@@ -123,10 +138,10 @@ class RegistryAggregationService(AggregationService):
 
             results.extend(execution)
 
-        return AggregationResponse(
-            results=self._normalize_results(results),
-            failures=tuple(failures),
-        )
+        normalized_results = self._normalize_results(results)
+        ranked_results = self._ranking_service.rank(request.search, normalized_results)
+
+        return AggregationResponse(results=ranked_results, failures=tuple(failures))
 
     @staticmethod
     def _build_failure(

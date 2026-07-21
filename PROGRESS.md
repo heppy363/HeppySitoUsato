@@ -107,13 +107,13 @@ IN SVILUPPO
 ## Fase Corrente
 
 ```text
-Registry condiviso dei provider runtime
+Normalizzazione iniziale della risposta aggregata
 ```
 
 ## Percentuale Indicativa
 
 ```text
-54%
+62%
 ```
 
 La percentuale è indicativa e non deve essere calcolata esclusivamente sul numero di file creati.
@@ -123,15 +123,15 @@ Deve riflettere il completamento reale delle macro aree previste nella roadmap.
 ## Ultimo Aggiornamento
 
 ```text
-Data: 2026-07-20
+Data: 2026-07-21
 Responsabile: Codex
-Attivita: Introduzione del registry condiviso dei provider runtime per il lifecycle FastAPI
+Attivita: Deduplicazione dei risultati aggregati per `(platform, external_id)` con primo merge conservativo dei campi normalizzati
 ```
 
 ## Prossimo Passo Approvato
 
 ```text
-Introdurre il primo contratto del futuro Aggregation Engine sopra il `ProviderRegistry`.
+Applicare un ranking iniziale ai risultati aggregati normalizzati.
 ```
 
 Codex non deve iniziare automaticamente attività successive oltre il prossimo passo approvato.
@@ -143,10 +143,10 @@ Codex non deve iniziare automaticamente attività successive oltre il prossimo p
 | Macro Area              | Stato        | Avanzamento | Note                              |
 | ----------------------- | ------------ | ----------: | --------------------------------- |
 | Infrastruttura e Docker | IN SVILUPPO  |         45% | Dockerfile backend/frontend allineati, avvio stack da completare |
-| Configurazione Backend  | IN SVILUPPO  |         93% | Poetry, lockfile, struttura FastAPI, lifecycle applicativo, registry provider runtime, modelli normalizzati validati, settings di rete con strategie proxy tipizzate e configurazione eBay ufficiale |
+| Configurazione Backend  | IN SVILUPPO  |         95% | Poetry, lockfile, struttura FastAPI, lifecycle applicativo, registry provider runtime, primi contratti di aggregazione con esecuzione parallela, modelli normalizzati validati e configurazione eBay ufficiale |
 | Network Layer           | IN SVILUPPO  |         79% | Client condiviso, configurazione proxy astratta, lifecycle con chiusura verificata e test mockati presenti; restano da definire i contratti marketplace |
 | Marketplace Provider    | IN SVILUPPO  |         72% | Contratto comune, `ProviderRegistry` runtime, `EbayProvider` con factory runtime, adapter mockato, adapter Browse API ufficiale e test presenti; verifica live ancora assente |
-| Aggregation Engine      | NON INIZIATO |          0% | Nessuna logica di aggregazione    |
+| Aggregation Engine      | IN SVILUPPO  |         40% | Contratto registry-backed presente con selezione provider, `asyncio.gather`, isolamento dei fallimenti, raccolta di risultati parziali, deduplicazione per `(platform, external_id)` e primo merge conservativo; ranking ancora assente |
 | Cache Redis             | NON INIZIATO |          0% | Solo servizio Docker, cache applicativa assente |
 | PostgreSQL e Migrazioni | NON INIZIATO |          0% | Solo servizio Docker, ORM e Alembic assenti |
 | Worker e Code           | NON INIZIATO |          0% | Solo placeholder Docker, tecnologia non selezionata |
@@ -156,7 +156,7 @@ Codex non deve iniziare automaticamente attività successive oltre il prossimo p
 | State Management        | IN SVILUPPO  |         15% | Pinia configurato con store iniziale |
 | Server State            | IN SVILUPPO  |         15% | TanStack Query configurato con query client base |
 | Interfaccia Grafica     | IN SVILUPPO  |         10% | Shell UI iniziale presente, feature di ricerca assenti |
-| Testing                 | IN SVILUPPO  |         62% | Test backend, network layer, lifecycle applicativo, `ProviderRegistry`, contratto provider, validazione modelli e primo provider concreto con factory runtime e adapter ufficiale presenti |
+| Testing                 | IN SVILUPPO  |         72% | Test backend, network layer, lifecycle applicativo, `ProviderRegistry`, aggregazione parallela con errore parziale, deduplicazione e merge iniziale, validazione modelli e primo provider concreto con factory runtime e adapter ufficiale presenti |
 | Monitoring              | IN SVILUPPO  |         10% | Servizi base presenti, metriche e dashboard da implementare |
 | Sicurezza               | NON INIZIATO |          0% | Controlli non implementati        |
 | Documentazione          | IN SVILUPPO  |         99% | Documenti principali verificati, variabili eBay documentate e progresso aggiornato |
@@ -502,27 +502,37 @@ I test coprono dati validi, incompleti e non validi. Resta aperto il mapping spe
 
 # 10. Aggregation Engine
 
-**Stato:** `NON INIZIATO`
+**Stato:** `IN SVILUPPO`
 
 ## Requisiti
 
-* [ ] Eseguire provider in parallelo
-* [ ] Utilizzare `asyncio.gather`
-* [ ] Isolare i fallimenti
-* [ ] Raccogliere risposte parziali
-* [ ] Eliminare duplicati
-* [ ] Normalizzare risultati
+* [x] Eseguire provider in parallelo
+* [x] Utilizzare `asyncio.gather`
+* [x] Isolare i fallimenti
+* [x] Raccogliere risposte parziali
+* [x] Eliminare duplicati
+* [x] Normalizzare risultati
 * [ ] Applicare ranking
 * [ ] Applicare filtri
 * [ ] Applicare ordinamento
 * [ ] Generare metriche
-* [ ] Aggiungere test di concorrenza
-* [ ] Aggiungere test di errore parziale
+* [x] Aggiungere test di concorrenza
+* [x] Aggiungere test di errore parziale
 
 ## Comportamento Atteso
 
 ```text
 Il fallimento di un provider non deve causare il fallimento degli altri provider.
+```
+
+#### Evidenze
+
+```text
+File creati: `backend/app/services/aggregation.py`, `backend/tests/test_aggregation.py`
+File modificati: `backend/app/services/__init__.py`, `backend/app/main.py`, `backend/tests/test_app.py`, `backend/tests/test_providers.py`, `backend/README.md`
+Componenti introdotti: `AggregationRequest`, `AggregationResponse`, `AggregationProviderFailure`, `AggregationService`, `RegistryAggregationService` e `AggregationProviderSelectionError` sopra `ProviderRegistry`
+Verifiche riuscite: normalizzazione e deduplicazione dei platform target, selezione dei provider registrati, esecuzione parallela via `asyncio.gather`, isolamento dei fallimenti, raccolta di risultati parziali, deduplicazione della risposta aggregata per `(platform, external_id)` e primo merge conservativo dei campi piu informativi
+Limite aperto: il contratto di aggregazione non applica ancora ranking, filtri, ordinamento o metriche della risposta.
 ```
 
 ---
@@ -1284,6 +1294,18 @@ Questa sezione deve contenere soltanto comandi realmente eseguiti con successo.
 | `poetry run pytest tests/test_app.py tests/test_network.py tests/test_providers.py tests/test_ebay_provider.py -q` | OK | 2026-07-20 | Test backend, registry provider runtime e wiring lifecycle superati |
 | `poetry run ruff check . --no-cache` | OK | 2026-07-20 | Lint backend superato dopo l'introduzione di `ProviderRegistry` |
 | `poetry run ruff format --check . --no-cache` | OK | 2026-07-20 | Formattazione backend verificata dopo l'introduzione di `ProviderRegistry` |
+| `poetry check`           | OK    | 2026-07-21 | Metadata backend verificati dopo il primo contratto dell'Aggregation Engine |
+| `poetry run pytest tests/test_app.py tests/test_network.py tests/test_providers.py tests/test_ebay_provider.py tests/test_aggregation.py -q` | OK | 2026-07-21 | Test backend, contratto di aggregazione e registry-backed selection superati |
+| `poetry run ruff check . --no-cache` | OK | 2026-07-21 | Lint backend superato dopo l'introduzione di `RegistryAggregationService` |
+| `poetry run ruff format --check . --no-cache` | OK | 2026-07-21 | Formattazione backend verificata dopo l'introduzione di `RegistryAggregationService` |
+| `poetry check`           | OK    | 2026-07-21 | Metadata backend verificati dopo l'esecuzione parallela iniziale dell'Aggregation Engine |
+| `poetry run pytest tests/test_app.py tests/test_network.py tests/test_providers.py tests/test_ebay_provider.py tests/test_aggregation.py -q` | OK | 2026-07-21 | Test backend, aggregazione parallela e raccolta di errori parziali superati |
+| `poetry run ruff check . --no-cache` | OK | 2026-07-21 | Lint backend superato dopo `asyncio.gather` e `AggregationResponse` |
+| `poetry run ruff format --check . --no-cache` | OK | 2026-07-21 | Formattazione backend verificata dopo `asyncio.gather` e `AggregationResponse` |
+| `poetry check`           | OK    | 2026-07-21 | Metadata backend verificati dopo la deduplicazione della risposta aggregata |
+| `poetry run pytest tests/test_app.py tests/test_network.py tests/test_providers.py tests/test_ebay_provider.py tests/test_aggregation.py -q` | OK | 2026-07-21 | Test backend, deduplicazione per piattaforma e merge iniziale dei risultati aggregati superati |
+| `poetry run ruff check . --no-cache` | OK | 2026-07-21 | Lint backend superato dopo il merge conservativo di `SearchResult` nell'Aggregation Engine |
+| `poetry run ruff format --check . --no-cache` | OK | 2026-07-21 | Formattazione backend verificata dopo la normalizzazione della risposta aggregata |
 | `poetry run ruff check . --no-cache` | OK | 2026-07-20 | Lint backend superato dopo l'estensione delle validazioni di `SearchResult` |
 | `poetry run ruff format --check . --no-cache` | OK | 2026-07-20 | Formattazione backend verificata dopo i nuovi test del modello |
 | `poetry check`           | OK    | 2026-07-20 | Metadata backend verificati dopo l'introduzione di `EbayProvider` |
@@ -2471,6 +2493,231 @@ Il registry runtime e verificato solo con il primo provider concreto (`EbayProvi
 
 ```text
 Introdurre il primo contratto del futuro Aggregation Engine sopra il `ProviderRegistry`.
+```
+
+---
+
+## 2026-07-21 - Primo contratto dell'Aggregation Engine sopra ProviderRegistry
+
+### Obiettivo
+
+Introdurre il primo contratto riusabile dell'Aggregation Engine sopra `ProviderRegistry`, iniziando dalla selezione e validazione dei provider target senza implementare ancora l'esecuzione parallela.
+
+### Requisiti Coinvolti
+
+* REQ-005
+* REQ-019
+* REQ-024
+* REQ-025
+
+### File Analizzati
+
+* `OBIETTIVI_E_ROADMAP.md`
+* `STACK_E_TECNOLOGIE.md`
+* `RUOLI_E_STANDARD.md`
+* `ARCHITETTURA.md`
+* `CODEX_WORKFLOW.md`
+* `PROGRESS.md`
+* `backend/README.md`
+* `backend/app/main.py`
+* `backend/app/providers/base.py`
+* `backend/app/providers/registry.py`
+* `backend/app/services/__init__.py`
+* `backend/tests/test_app.py`
+* `backend/tests/test_providers.py`
+
+### File Creati
+
+* `backend/app/services/aggregation.py`
+* `backend/tests/test_aggregation.py`
+
+### File Modificati
+
+* `backend/README.md`
+* `backend/app/main.py`
+* `backend/app/services/__init__.py`
+* `backend/tests/test_app.py`
+* `backend/tests/test_providers.py`
+* `PROGRESS.md`
+
+### File Eliminati
+
+* Nessuno
+
+### Implementazione
+
+Introdotti `AggregationRequest`, `AggregationService`, `RegistryAggregationService` e `AggregationProviderSelectionError` come primo contratto dell'Aggregation Engine sopra `ProviderRegistry`. Il servizio normalizza i platform target, seleziona i provider registrati in ordine dichiarato, rifiuta platform sconosciute e viene esposto nel lifecycle FastAPI tramite `app.state.aggregation_service`, pronto per essere esteso con esecuzione parallela e raccolta dei risultati.
+
+### Test Eseguiti
+
+* `poetry check` - superato
+* `poetry run pytest tests/test_app.py tests/test_network.py tests/test_providers.py tests/test_ebay_provider.py tests/test_aggregation.py -q` - superato
+* `poetry run ruff check . --no-cache` - superato
+* `poetry run ruff format --check . --no-cache` - superato
+
+### Stato Finale
+
+```text
+COMPLETATO
+```
+
+### Problemi Rilevati
+
+```text
+Il contratto di aggregazione e verificato solo per la selezione dei provider target; l'esecuzione concorrente e la raccolta di errori parziali restano ancora da implementare.
+```
+
+### Prossimo Passo
+
+```text
+Implementare l'esecuzione parallela dei provider tramite `asyncio.gather` mantenendo isolamento dei fallimenti.
+```
+
+---
+
+## 2026-07-21 - Esecuzione parallela iniziale dell'Aggregation Engine
+
+### Obiettivo
+
+Implementare l'esecuzione parallela dei provider selezionati tramite `asyncio.gather`, mantenendo isolamento dei fallimenti e raccolta di risultati parziali senza introdurre ancora deduplicazione o ranking.
+
+### Requisiti Coinvolti
+
+* REQ-005
+* REQ-019
+* REQ-024
+* REQ-025
+
+### File Analizzati
+
+* `OBIETTIVI_E_ROADMAP.md`
+* `STACK_E_TECNOLOGIE.md`
+* `RUOLI_E_STANDARD.md`
+* `ARCHITETTURA.md`
+* `CODEX_WORKFLOW.md`
+* `PROGRESS.md`
+* `backend/README.md`
+* `backend/app/main.py`
+* `backend/app/services/aggregation.py`
+* `backend/app/services/__init__.py`
+* `backend/tests/test_app.py`
+* `backend/tests/test_aggregation.py`
+
+### File Creati
+
+* Nessuno
+
+### File Modificati
+
+* `backend/README.md`
+* `backend/app/services/aggregation.py`
+* `backend/app/services/__init__.py`
+* `backend/tests/test_aggregation.py`
+* `PROGRESS.md`
+
+### File Eliminati
+
+* Nessuno
+
+### Implementazione
+
+`RegistryAggregationService` esegue ora le ricerche dei provider selezionati in parallelo tramite `asyncio.gather(return_exceptions=True)`, serializza i fallimenti in `AggregationProviderFailure` e restituisce una `AggregationResponse` con risultati e errori parziali. I test verificano sia l'effettiva concorrenza osservabile sia il fatto che il fallimento di un provider non blocchi gli altri.
+
+### Test Eseguiti
+
+* `poetry check` - superato
+* `poetry run pytest tests/test_app.py tests/test_network.py tests/test_providers.py tests/test_ebay_provider.py tests/test_aggregation.py -q` - superato
+* `poetry run ruff check . --no-cache` - superato
+* `poetry run ruff format --check . --no-cache` - superato
+
+### Stato Finale
+
+```text
+COMPLETATO
+```
+
+### Problemi Rilevati
+
+```text
+L'Aggregation Engine raccoglie gia risultati parziali, ma non esegue ancora deduplicazione, merge, ranking, filtri o ordinamento della risposta aggregata.
+```
+
+### Prossimo Passo
+
+```text
+Normalizzare la risposta aggregata introducendo deduplicazione e primo merge dei risultati.
+```
+
+---
+
+## 2026-07-21 - Deduplicazione e primo merge della risposta aggregata
+
+### Obiettivo
+
+Normalizzare la risposta dell'Aggregation Engine eliminando i duplicati sicuri e introducendo un primo merge conservativo dei campi dei risultati aggregati.
+
+### Requisiti Coinvolti
+
+* REQ-005
+* REQ-019
+* REQ-024
+* REQ-025
+
+### File Analizzati
+
+* `OBIETTIVI_E_ROADMAP.md`
+* `STACK_E_TECNOLOGIE.md`
+* `RUOLI_E_STANDARD.md`
+* `ARCHITETTURA.md`
+* `CODEX_WORKFLOW.md`
+* `PROGRESS.md`
+* `backend/README.md`
+* `backend/app/providers/models.py`
+* `backend/app/services/aggregation.py`
+* `backend/tests/test_aggregation.py`
+
+### File Creati
+
+* Nessuno
+
+### File Modificati
+
+* `backend/README.md`
+* `backend/app/services/aggregation.py`
+* `backend/tests/test_aggregation.py`
+* `PROGRESS.md`
+
+### File Eliminati
+
+* Nessuno
+
+### Implementazione
+
+`RegistryAggregationService` normalizza ora i risultati finali deduplicandoli per coppia `(platform, external_id)` e applica un primo merge conservativo dei campi complementari. Il merge mantiene l'ordine di prima occorrenza, arricchisce testi e metadati opzionali quando disponibili, conserva il `collected_at` piu recente, il `published_at` piu antico e il `relevance_score` massimo, senza introdurre ancora ranking, filtri o ordinamento.
+
+### Test Eseguiti
+
+* `poetry check` - superato
+* `poetry run pytest tests/test_app.py tests/test_network.py tests/test_providers.py tests/test_ebay_provider.py tests/test_aggregation.py -q` - superato
+* `poetry run ruff check . --no-cache` - superato
+* `poetry run ruff format --check . --no-cache` - superato
+
+### Stato Finale
+
+```text
+COMPLETATO
+```
+
+### Problemi Rilevati
+
+```text
+La normalizzazione aggregata e ora presente, ma manca ancora un ranking esplicito dei risultati e non sono ancora gestiti filtri, ordinamento e metriche.
+```
+
+### Prossimo Passo
+
+```text
+Applicare un ranking iniziale ai risultati aggregati normalizzati.
 ```
 
 ---

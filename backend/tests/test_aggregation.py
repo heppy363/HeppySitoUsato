@@ -15,6 +15,7 @@ from app.providers import (
 )
 from app.providers.models import ProviderStatus, SearchRequest, SearchResult
 from app.services import (
+    AggregationMetrics,
     AggregationProviderFailure,
     AggregationProviderSelectionError,
     AggregationRequest,
@@ -193,6 +194,14 @@ async def test_registry_aggregation_service_executes_selected_providers_in_paral
     assert isinstance(response, AggregationResponse)
     assert len(response.results) == 2
     assert response.failures == ()
+    assert response.metrics.provider_count == 2
+    assert response.metrics.successful_provider_count == 2
+    assert response.metrics.failed_provider_count == 0
+    assert response.metrics.raw_result_count == 2
+    assert response.metrics.normalized_result_count == 2
+    assert response.metrics.filtered_result_count == 2
+    assert response.metrics.final_result_count == 2
+    assert response.metrics.duration_ms >= 0.0
     assert state.max_active == 2
 
 
@@ -228,6 +237,17 @@ async def test_registry_aggregation_service_collects_partial_results_when_one_pr
             message="SubitoProvider is temporarily unavailable",
         ),
     )
+    assert response.metrics == AggregationMetrics(
+        provider_count=2,
+        successful_provider_count=1,
+        failed_provider_count=1,
+        raw_result_count=1,
+        normalized_result_count=1,
+        filtered_result_count=1,
+        final_result_count=1,
+        duration_ms=response.metrics.duration_ms,
+    )
+    assert response.metrics.duration_ms >= 0.0
 
 
 @pytest.mark.asyncio
@@ -415,6 +435,71 @@ async def test_registry_aggregation_service_filters_results_by_price_range() -> 
             url="https://example.com/items/target",
         ),
     )
+    assert response.metrics == AggregationMetrics(
+        provider_count=1,
+        successful_provider_count=1,
+        failed_provider_count=0,
+        raw_result_count=3,
+        normalized_result_count=3,
+        filtered_result_count=1,
+        final_result_count=1,
+        duration_ms=response.metrics.duration_ms,
+    )
+    assert response.metrics.duration_ms >= 0.0
+
+
+@pytest.mark.asyncio
+async def test_registry_aggregation_service_reports_pipeline_metrics_after_merge_and_ordering() -> (
+    None
+):
+    collected_base = datetime(2026, 7, 21, 9, 0, tzinfo=UTC)
+    collected_enriched = datetime(2026, 7, 21, 11, 30, tzinfo=UTC)
+    service = RegistryAggregationService(
+        ProviderRegistry(
+            [
+                ResultSetAggregationDummyProvider(
+                    platform="ebay",
+                    results=[
+                        SearchResult(
+                            id="ebay:1",
+                            external_id="1",
+                            title="RTX 3090",
+                            price=100.0,
+                            currency="EUR",
+                            platform="ebay",
+                            url="https://example.com/items/1",
+                            collected_at=collected_base,
+                        ),
+                        SearchResult(
+                            id="ebay:1",
+                            external_id="1",
+                            title="RTX 3090 Founders Edition",
+                            price=100.0,
+                            currency="EUR",
+                            platform="ebay",
+                            url="https://example.com/items/1",
+                            collected_at=collected_enriched,
+                        ),
+                    ],
+                )
+            ]
+        ),
+        ranking_service=PassthroughRankingService(),
+    )
+
+    response = await service.search(AggregationRequest(search=SearchRequest(query="RTX 3090")))
+
+    assert response.metrics == AggregationMetrics(
+        provider_count=1,
+        successful_provider_count=1,
+        failed_provider_count=0,
+        raw_result_count=2,
+        normalized_result_count=1,
+        filtered_result_count=1,
+        final_result_count=1,
+        duration_ms=response.metrics.duration_ms,
+    )
+    assert response.metrics.duration_ms >= 0.0
 
 
 @pytest.mark.asyncio

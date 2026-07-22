@@ -2,6 +2,7 @@ import asyncio
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from datetime import datetime
+from time import perf_counter
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -67,9 +68,23 @@ class AggregationProviderFailure(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
 
+class AggregationMetrics(BaseModel):
+    provider_count: int = Field(default=0, ge=0)
+    successful_provider_count: int = Field(default=0, ge=0)
+    failed_provider_count: int = Field(default=0, ge=0)
+    raw_result_count: int = Field(default=0, ge=0)
+    normalized_result_count: int = Field(default=0, ge=0)
+    filtered_result_count: int = Field(default=0, ge=0)
+    final_result_count: int = Field(default=0, ge=0)
+    duration_ms: float = Field(default=0.0, ge=0.0)
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+
 class AggregationResponse(BaseModel):
     results: tuple[SearchResult, ...] = Field(default_factory=tuple)
     failures: tuple[AggregationProviderFailure, ...] = Field(default_factory=tuple)
+    metrics: AggregationMetrics = Field(default_factory=AggregationMetrics)
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -131,6 +146,7 @@ class RegistryAggregationService(AggregationService):
         return tuple(selected_providers)
 
     async def search(self, request: AggregationRequest) -> AggregationResponse:
+        started_at = perf_counter()
         providers = self.select_providers(request)
         executions = await asyncio.gather(
             *(provider.search(request.search) for provider in providers),
@@ -151,8 +167,22 @@ class RegistryAggregationService(AggregationService):
         filtered_results = self._filter_results(request, normalized_results)
         ranked_results = self._ranking_service.rank(request.search, filtered_results)
         ordered_results = self._order_results(ranked_results)
+        metrics = AggregationMetrics(
+            provider_count=len(providers),
+            successful_provider_count=len(providers) - len(failures),
+            failed_provider_count=len(failures),
+            raw_result_count=len(results),
+            normalized_result_count=len(normalized_results),
+            filtered_result_count=len(filtered_results),
+            final_result_count=len(ordered_results),
+            duration_ms=(perf_counter() - started_at) * 1000,
+        )
 
-        return AggregationResponse(results=ordered_results, failures=tuple(failures))
+        return AggregationResponse(
+            results=ordered_results,
+            failures=tuple(failures),
+            metrics=metrics,
+        )
 
     @staticmethod
     def _build_failure(

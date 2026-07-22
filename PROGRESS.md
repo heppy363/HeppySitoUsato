@@ -107,13 +107,13 @@ IN SVILUPPO
 ## Fase Corrente
 
 ```text
-Ordinamento finale iniziale dei risultati aggregati
+Metriche iniziali dell'Aggregation Engine
 ```
 
 ## Percentuale Indicativa
 
 ```text
-68%
+69%
 ```
 
 La percentuale è indicativa e non deve essere calcolata esclusivamente sul numero di file creati.
@@ -123,15 +123,15 @@ Deve riflettere il completamento reale delle macro aree previste nella roadmap.
 ## Ultimo Aggiornamento
 
 ```text
-Data: 2026-07-21
+Data: 2026-07-22
 Responsabile: Codex
-Attivita: Introduzione dell'ordinamento finale deterministico dei risultati aggregati dopo ranking e filtri
+Attivita: Introduzione delle prime metriche applicative dell'Aggregation Engine nella risposta aggregata
 ```
 
 ## Prossimo Passo Approvato
 
 ```text
-Generare le prime metriche dell'Aggregation Engine.
+Implementare il primo endpoint `GET /health` di FastAPI.
 ```
 
 Codex non deve iniziare automaticamente attività successive oltre il prossimo passo approvato.
@@ -146,7 +146,7 @@ Codex non deve iniziare automaticamente attività successive oltre il prossimo p
 | Configurazione Backend  | IN SVILUPPO  |         95% | Poetry, lockfile, struttura FastAPI, lifecycle applicativo, registry provider runtime, primi contratti di aggregazione con esecuzione parallela, modelli normalizzati validati e configurazione eBay ufficiale |
 | Network Layer           | IN SVILUPPO  |         79% | Client condiviso, configurazione proxy astratta, lifecycle con chiusura verificata e test mockati presenti; restano da definire i contratti marketplace |
 | Marketplace Provider    | IN SVILUPPO  |         72% | Contratto comune, `ProviderRegistry` runtime, `EbayProvider` con factory runtime, adapter mockato, adapter Browse API ufficiale e test presenti; verifica live ancora assente |
-| Aggregation Engine      | IN SVILUPPO  |         72% | Contratto registry-backed presente con selezione provider, `asyncio.gather`, isolamento dei fallimenti, raccolta di risultati parziali, deduplicazione per `(platform, external_id)`, primo merge conservativo, ranking euristico iniziale, primi filtri prezzo e ordinamento finale deterministico; metriche ancora assenti |
+| Aggregation Engine      | IN SVILUPPO  |         80% | Contratto registry-backed presente con selezione provider, `asyncio.gather`, isolamento dei fallimenti, raccolta di risultati parziali, deduplicazione per `(platform, external_id)`, primo merge conservativo, ranking euristico iniziale, primi filtri prezzo, ordinamento finale deterministico e prime metriche applicative della risposta aggregata |
 | Cache Redis             | NON INIZIATO |          0% | Solo servizio Docker, cache applicativa assente |
 | PostgreSQL e Migrazioni | NON INIZIATO |          0% | Solo servizio Docker, ORM e Alembic assenti |
 | Worker e Code           | NON INIZIATO |          0% | Solo placeholder Docker, tecnologia non selezionata |
@@ -156,8 +156,8 @@ Codex non deve iniziare automaticamente attività successive oltre il prossimo p
 | State Management        | IN SVILUPPO  |         15% | Pinia configurato con store iniziale |
 | Server State            | IN SVILUPPO  |         15% | TanStack Query configurato con query client base |
 | Interfaccia Grafica     | IN SVILUPPO  |         10% | Shell UI iniziale presente, feature di ricerca assenti |
-| Testing                 | IN SVILUPPO  |         78% | Test backend, network layer, lifecycle applicativo, `ProviderRegistry`, aggregazione parallela con errore parziale, deduplicazione, merge iniziale, ranking euristico, filtri prezzo, ordinamento finale e validazione modelli con primo provider concreto e adapter ufficiale presenti |
-| Monitoring              | IN SVILUPPO  |         10% | Servizi base presenti, metriche e dashboard da implementare |
+| Testing                 | IN SVILUPPO  |         80% | Test backend, network layer, lifecycle applicativo, `ProviderRegistry`, aggregazione parallela con errore parziale, deduplicazione, merge iniziale, ranking euristico, filtri prezzo, ordinamento finale, metriche iniziali e validazione modelli con primo provider concreto e adapter ufficiale presenti |
+| Monitoring              | IN SVILUPPO  |         15% | Servizi base presenti; prime metriche applicative dell'Aggregation Engine disponibili nella response, ma endpoint e dashboard restano da implementare |
 | Sicurezza               | NON INIZIATO |          0% | Controlli non implementati        |
 | Documentazione          | IN SVILUPPO  |         99% | Documenti principali verificati, variabili eBay documentate e progresso aggiornato |
 
@@ -515,7 +515,7 @@ I test coprono dati validi, incompleti e non validi. Resta aperto il mapping spe
 * [x] Applicare ranking
 * [x] Applicare filtri
 * [x] Applicare ordinamento
-* [ ] Generare metriche
+* [x] Generare metriche
 * [x] Aggiungere test di concorrenza
 * [x] Aggiungere test di errore parziale
 
@@ -530,9 +530,9 @@ Il fallimento di un provider non deve causare il fallimento degli altri provider
 ```text
 File creati: `backend/app/services/aggregation.py`, `backend/app/services/ranking.py`, `backend/tests/test_aggregation.py`
 File modificati: `backend/app/services/__init__.py`, `backend/app/main.py`, `backend/tests/test_app.py`, `backend/tests/test_providers.py`, `backend/README.md`
-Componenti introdotti: `AggregationRequest`, `AggregationResponse`, `AggregationProviderFailure`, `AggregationService`, `RegistryAggregationService`, `AggregationProviderSelectionError`, `RankingService` e `HeuristicRankingService`
-Verifiche riuscite: normalizzazione e deduplicazione dei platform target, selezione dei provider registrati, esecuzione parallela via `asyncio.gather`, isolamento dei fallimenti, raccolta di risultati parziali, deduplicazione della risposta aggregata per `(platform, external_id)`, primo merge conservativo dei campi piu informativi, ranking iniziale basato su query, freschezza, completezza e prezzo, primi filtri prezzo tramite `min_price` e `max_price` e ordinamento finale deterministico per rilevanza, freschezza, raccolta, prezzo e chiavi stabili
-Limite aperto: il contratto di aggregazione non genera ancora metriche della risposta.
+Componenti introdotti: `AggregationRequest`, `AggregationResponse`, `AggregationMetrics`, `AggregationProviderFailure`, `AggregationService`, `RegistryAggregationService`, `AggregationProviderSelectionError`, `RankingService` e `HeuristicRankingService`
+Verifiche riuscite: normalizzazione e deduplicazione dei platform target, selezione dei provider registrati, esecuzione parallela via `asyncio.gather`, isolamento dei fallimenti, raccolta di risultati parziali, deduplicazione della risposta aggregata per `(platform, external_id)`, primo merge conservativo dei campi piu informativi, ranking iniziale basato su query, freschezza, completezza e prezzo, primi filtri prezzo tramite `min_price` e `max_price`, ordinamento finale deterministico per rilevanza, freschezza, raccolta, prezzo e chiavi stabili, metriche iniziali di provider, pipeline (`raw`, `normalized`, `filtered`, `final`) e durata della ricerca aggregata
+Limite aperto: le metriche sono oggi disponibili solo nel contratto applicativo `AggregationResponse` e non sono ancora esposte via endpoint, Prometheus o dashboard.
 ```
 
 ---
@@ -929,9 +929,9 @@ Questa tabella deve collegare ogni requisito ai file reali che lo implementano.
 | REQ-004 | Interfaccia MarketplaceProvider | ARCHITETTURA.md        | Non presente         | Non presente    | NON INIZIATO |
 | REQ-005 | Network client asincrono        | OBIETTIVI_E_ROADMAP.md | `backend/app/network/client.py`, `backend/app/network/config.py`, `backend/app/network/models.py`, `backend/app/network/exceptions.py`, `backend/app/core/config.py` | `backend/tests/test_network.py` | IN SVILUPPO  |
 | REQ-006 | Proxy provider astratto         | ARCHITETTURA.md        | Non presente         | Non presente    | NON INIZIATO |
-| REQ-007 | Normalizzazione risultati       | OBIETTIVI_E_ROADMAP.md | Non presente         | Non presente    | NON INIZIATO |
-| REQ-008 | Aggregazione concorrente        | OBIETTIVI_E_ROADMAP.md | Non presente         | Non presente    | NON INIZIATO |
-| REQ-009 | Ranking risultati               | ARCHITETTURA.md        | Non presente         | Non presente    | NON INIZIATO |
+| REQ-007 | Normalizzazione risultati       | OBIETTIVI_E_ROADMAP.md | `backend/app/providers/models.py`, `backend/app/providers/ebay/mapper.py`, `backend/app/services/aggregation.py` | `backend/tests/test_ebay_provider.py`, `backend/tests/test_aggregation.py` | IN SVILUPPO  |
+| REQ-008 | Aggregazione concorrente        | OBIETTIVI_E_ROADMAP.md | `backend/app/services/aggregation.py`, `backend/app/providers/registry.py`, `backend/app/main.py` | `backend/tests/test_app.py`, `backend/tests/test_aggregation.py` | IN SVILUPPO  |
+| REQ-009 | Ranking risultati               | ARCHITETTURA.md        | `backend/app/services/ranking.py`, `backend/app/services/aggregation.py` | `backend/tests/test_aggregation.py` | IN SVILUPPO  |
 | REQ-010 | Redis cache                     | STACK_E_TECNOLOGIE.md  | Non presente         | Non presente    | NON INIZIATO |
 | REQ-011 | PostgreSQL e Alembic            | STACK_E_TECNOLOGIE.md  | Non presente         | Non presente    | NON INIZIATO |
 | REQ-012 | Worker asincrono                | OBIETTIVI_E_ROADMAP.md | Non presente         | Non presente    | NON INIZIATO |
@@ -941,7 +941,7 @@ Questa tabella deve collegare ogni requisito ai file reali che lo implementano.
 | REQ-016 | Pinia                           | STACK_E_TECNOLOGIE.md  | `frontend/package.json`, `frontend/src/main.js`, `frontend/src/stores/search-filters.js` | Non presente    | IN SVILUPPO  |
 | REQ-017 | TanStack Query                  | STACK_E_TECNOLOGIE.md  | `frontend/package.json`, `frontend/src/main.js`, `frontend/src/utils/query-client.js` | Non presente    | IN SVILUPPO  |
 | REQ-018 | Tailwind dark mode              | STACK_E_TECNOLOGIE.md  | `frontend/tailwind.config.js`, `frontend/src/style.css`, `frontend/src/components/AppShell.vue` | Non presente    | IN SVILUPPO  |
-| REQ-019 | Test backend                    | RUOLI_E_STANDARD.md    | `backend/tests/test_app.py`, `backend/tests/test_network.py`, `backend/tests/conftest.py`, `backend/pyproject.toml` | `backend/tests/test_app.py`, `backend/tests/test_network.py` | IN SVILUPPO  |
+| REQ-019 | Test backend                    | RUOLI_E_STANDARD.md    | `backend/tests/test_app.py`, `backend/tests/test_network.py`, `backend/tests/test_providers.py`, `backend/tests/test_ebay_provider.py`, `backend/tests/test_aggregation.py`, `backend/tests/conftest.py`, `backend/pyproject.toml` | `backend/tests/test_app.py`, `backend/tests/test_network.py`, `backend/tests/test_providers.py`, `backend/tests/test_ebay_provider.py`, `backend/tests/test_aggregation.py` | IN SVILUPPO  |
 | REQ-020 | Test frontend                   | RUOLI_E_STANDARD.md    | Non presente         | Non presente    | NON INIZIATO |
 | REQ-021 | Prometheus                      | ARCHITETTURA.md        | `docker-compose.yml`, `docker/prometheus/prometheus.yml` | Non presente    | IN SVILUPPO  |
 | REQ-022 | Grafana                         | ARCHITETTURA.md        | `docker-compose.yml`, `docker/grafana/provisioning/datasources/prometheus.yml` | Non presente    | IN SVILUPPO  |
@@ -1326,6 +1326,11 @@ Questa sezione deve contenere soltanto comandi realmente eseguiti con successo.
 | `poetry run pytest tests/test_app.py tests/test_network.py tests/test_providers.py tests/test_ebay_provider.py tests/test_aggregation.py -q` | OK | 2026-07-21 | Test backend, ordinamento finale deterministico e stabilita dei risultati aggregati superati |
 | `poetry run ruff check . --no-cache` | OK | 2026-07-21 | Lint backend superato dopo l'ordinamento finale dei risultati aggregati |
 | `poetry run ruff format --check . --no-cache` | OK | 2026-07-21 | Formattazione backend verificata dopo i test dell'ordinamento aggregato |
+| `poetry check`           | OK    | 2026-07-22 | Metadata backend verificati dopo l'introduzione di `AggregationMetrics` nell'Aggregation Engine |
+| `poetry run pytest tests/test_aggregation.py -q` | OK | 2026-07-22 | Test mirati delle metriche iniziali dell'Aggregation Engine superati |
+| `poetry run pytest tests/test_app.py tests/test_network.py tests/test_providers.py tests/test_ebay_provider.py tests/test_aggregation.py -q` | OK | 2026-07-22 | Test backend completi, inclusi conteggi pipeline, fallimenti parziali e durata delle metriche aggregate, superati |
+| `poetry run ruff check . --no-cache` | OK | 2026-07-22 | Lint backend superato dopo l'aggiunta di `AggregationMetrics` e dell'instrumentation minima del servizio |
+| `poetry run ruff format --check . --no-cache` | OK | 2026-07-22 | Formattazione backend verificata dopo i test delle metriche aggregate |
 | `poetry run ruff check . --no-cache` | OK | 2026-07-20 | Lint backend superato dopo l'estensione delle validazioni di `SearchResult` |
 | `poetry run ruff format --check . --no-cache` | OK | 2026-07-20 | Formattazione backend verificata dopo i nuovi test del modello |
 | `poetry check`           | OK    | 2026-07-20 | Metadata backend verificati dopo l'introduzione di `EbayProvider` |
@@ -2955,6 +2960,80 @@ L'ordinamento finale deterministico e presente, ma mancano ancora le metriche de
 
 ```text
 Generare le prime metriche dell'Aggregation Engine.
+```
+
+---
+
+## 2026-07-22 - Prime metriche dell'Aggregation Engine
+
+### Obiettivo
+
+Generare le prime metriche applicative dell'Aggregation Engine direttamente nella risposta aggregata, senza introdurre ancora endpoint o integrazioni di monitoring esterne.
+
+### Requisiti Coinvolti
+
+* REQ-005
+* REQ-019
+* REQ-024
+* REQ-025
+
+### File Analizzati
+
+* `OBIETTIVI_E_ROADMAP.md`
+* `STACK_E_TECNOLOGIE.md`
+* `RUOLI_E_STANDARD.md`
+* `ARCHITETTURA.md`
+* `CODEX_WORKFLOW.md`
+* `PROGRESS.md`
+* `backend/README.md`
+* `backend/app/services/__init__.py`
+* `backend/app/services/aggregation.py`
+* `backend/tests/test_aggregation.py`
+
+### File Creati
+
+* Nessuno
+
+### File Modificati
+
+* `backend/README.md`
+* `backend/app/services/__init__.py`
+* `backend/app/services/aggregation.py`
+* `backend/tests/test_aggregation.py`
+* `PROGRESS.md`
+
+### File Eliminati
+
+* Nessuno
+
+### Implementazione
+
+Introdotto `AggregationMetrics` come nuovo contratto minimale esposto da `AggregationResponse`. `RegistryAggregationService` misura ora numero di provider selezionati, provider riusciti o falliti, conteggi della pipeline (`raw_result_count`, `normalized_result_count`, `filtered_result_count`, `final_result_count`) e durata della ricerca in millisecondi. I test coprono il caso concorrente, il fallimento parziale, il filtro prezzo e il percorso con merge e ordinamento.
+
+### Test Eseguiti
+
+* `poetry check` - superato
+* `poetry run pytest tests/test_aggregation.py -q` - superato
+* `poetry run pytest tests/test_app.py tests/test_network.py tests/test_providers.py tests/test_ebay_provider.py tests/test_aggregation.py -q` - superato
+* `poetry run ruff check . --no-cache` - superato
+* `poetry run ruff format --check . --no-cache` - superato
+
+### Stato Finale
+
+```text
+COMPLETATO
+```
+
+### Problemi Rilevati
+
+```text
+Le metriche sono disponibili solo nel contratto applicativo di aggregazione e non sono ancora esposte tramite endpoint FastAPI, Prometheus o dashboard dedicate.
+```
+
+### Prossimo Passo
+
+```text
+Implementare il primo endpoint `GET /health` di FastAPI.
 ```
 
 ---

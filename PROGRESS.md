@@ -107,13 +107,13 @@ IN SVILUPPO
 ## Fase Corrente
 
 ```text
-Metriche iniziali dell'Aggregation Engine
+Primo endpoint health di FastAPI
 ```
 
 ## Percentuale Indicativa
 
 ```text
-69%
+71%
 ```
 
 La percentuale è indicativa e non deve essere calcolata esclusivamente sul numero di file creati.
@@ -125,13 +125,13 @@ Deve riflettere il completamento reale delle macro aree previste nella roadmap.
 ```text
 Data: 2026-07-22
 Responsabile: Codex
-Attivita: Introduzione delle prime metriche applicative dell'Aggregation Engine nella risposta aggregata
+Attivita: Implementazione del primo endpoint `GET /health` di FastAPI con controlli runtime di backend, Redis e database
 ```
 
 ## Prossimo Passo Approvato
 
 ```text
-Implementare il primo endpoint `GET /health` di FastAPI.
+Implementare il primo endpoint `GET /search` di FastAPI.
 ```
 
 Codex non deve iniziare automaticamente attività successive oltre il prossimo passo approvato.
@@ -150,13 +150,13 @@ Codex non deve iniziare automaticamente attività successive oltre il prossimo p
 | Cache Redis             | NON INIZIATO |          0% | Solo servizio Docker, cache applicativa assente |
 | PostgreSQL e Migrazioni | NON INIZIATO |          0% | Solo servizio Docker, ORM e Alembic assenti |
 | Worker e Code           | NON INIZIATO |          0% | Solo placeholder Docker, tecnologia non selezionata |
-| API FastAPI             | NON INIZIATO |          0% | Nessun endpoint presente          |
+| API FastAPI             | IN SVILUPPO  |         20% | Endpoint `GET /health` presente con response model, stato HTTP coerente e controlli runtime di backend, Redis e database |
 | Streaming Risultati     | NON INIZIATO |          0% | SSE o WebSocket non definiti      |
 | Frontend Vue            | IN SVILUPPO  |         50% | Vite, struttura Vue e immagine Docker inizializzati |
 | State Management        | IN SVILUPPO  |         15% | Pinia configurato con store iniziale |
 | Server State            | IN SVILUPPO  |         15% | TanStack Query configurato con query client base |
 | Interfaccia Grafica     | IN SVILUPPO  |         10% | Shell UI iniziale presente, feature di ricerca assenti |
-| Testing                 | IN SVILUPPO  |         80% | Test backend, network layer, lifecycle applicativo, `ProviderRegistry`, aggregazione parallela con errore parziale, deduplicazione, merge iniziale, ranking euristico, filtri prezzo, ordinamento finale, metriche iniziali e validazione modelli con primo provider concreto e adapter ufficiale presenti |
+| Testing                 | IN SVILUPPO  |         82% | Test backend, network layer, lifecycle applicativo, `ProviderRegistry`, aggregazione parallela con errore parziale, deduplicazione, merge iniziale, ranking euristico, filtri prezzo, ordinamento finale, metriche iniziali, health endpoint e validazione modelli con primo provider concreto e adapter ufficiale presenti |
 | Monitoring              | IN SVILUPPO  |         15% | Servizi base presenti; prime metriche applicative dell'Aggregation Engine disponibili nella response, ma endpoint e dashboard restano da implementare |
 | Sicurezza               | NON INIZIATO |          0% | Controlli non implementati        |
 | Documentazione          | IN SVILUPPO  |         99% | Documenti principali verificati, variabili eBay documentate e progresso aggiornato |
@@ -420,7 +420,7 @@ Limite aperto: l'integrazione eBay resta verificata solo tramite test locali e m
 
 ## Wallapop Provider
 
-**Stato:** `NON INIZIATO`
+**Stato:** `IN SVILUPPO`
 
 * [ ] Verificare modalità di accesso consentite
 * [ ] Individuare una sorgente dati stabile e autorizzata
@@ -436,7 +436,7 @@ Limite aperto: l'integrazione eBay resta verificata solo tramite test locali e m
 
 ## Vinted Provider
 
-**Stato:** `NON INIZIATO`
+**Stato:** `IN SVILUPPO`
 
 * [ ] Verificare modalità di accesso consentite
 * [ ] Individuare una sorgente dati stabile e autorizzata
@@ -655,7 +655,7 @@ ARQ oppure Celery
 
 # 15. API FastAPI
 
-**Stato:** `NON INIZIATO`
+**Stato:** `IN SVILUPPO`
 
 ## Endpoint Health
 
@@ -663,12 +663,12 @@ ARQ oppure Celery
 GET /health
 ```
 
-* [ ] Endpoint creato
-* [ ] Response model creato
-* [ ] Stato backend verificato
-* [ ] Stato Redis verificato
-* [ ] Stato database verificato
-* [ ] Test presente
+* [x] Endpoint creato
+* [x] Response model creato
+* [x] Stato backend verificato
+* [x] Stato Redis verificato
+* [x] Stato database verificato
+* [x] Test presente
 
 ## Endpoint Search
 
@@ -935,13 +935,13 @@ Questa tabella deve collegare ogni requisito ai file reali che lo implementano.
 | REQ-010 | Redis cache                     | STACK_E_TECNOLOGIE.md  | Non presente         | Non presente    | NON INIZIATO |
 | REQ-011 | PostgreSQL e Alembic            | STACK_E_TECNOLOGIE.md  | Non presente         | Non presente    | NON INIZIATO |
 | REQ-012 | Worker asincrono                | OBIETTIVI_E_ROADMAP.md | Non presente         | Non presente    | NON INIZIATO |
-| REQ-013 | Endpoint `/health`              | OBIETTIVI_E_ROADMAP.md | Non presente         | Non presente    | NON INIZIATO |
+| REQ-013 | Endpoint `/health`              | OBIETTIVI_E_ROADMAP.md | `backend/app/api/router.py`, `backend/app/models/health.py`, `backend/app/services/health.py`, `backend/app/main.py` | `backend/tests/test_app.py`, `backend/tests/test_health.py` | COMPLETATO |
 | REQ-014 | Endpoint `/search`              | OBIETTIVI_E_ROADMAP.md | Non presente         | Non presente    | NON INIZIATO |
 | REQ-015 | Streaming progressivo           | ARCHITETTURA.md        | Non presente         | Non presente    | NON INIZIATO |
 | REQ-016 | Pinia                           | STACK_E_TECNOLOGIE.md  | `frontend/package.json`, `frontend/src/main.js`, `frontend/src/stores/search-filters.js` | Non presente    | IN SVILUPPO  |
 | REQ-017 | TanStack Query                  | STACK_E_TECNOLOGIE.md  | `frontend/package.json`, `frontend/src/main.js`, `frontend/src/utils/query-client.js` | Non presente    | IN SVILUPPO  |
 | REQ-018 | Tailwind dark mode              | STACK_E_TECNOLOGIE.md  | `frontend/tailwind.config.js`, `frontend/src/style.css`, `frontend/src/components/AppShell.vue` | Non presente    | IN SVILUPPO  |
-| REQ-019 | Test backend                    | RUOLI_E_STANDARD.md    | `backend/tests/test_app.py`, `backend/tests/test_network.py`, `backend/tests/test_providers.py`, `backend/tests/test_ebay_provider.py`, `backend/tests/test_aggregation.py`, `backend/tests/conftest.py`, `backend/pyproject.toml` | `backend/tests/test_app.py`, `backend/tests/test_network.py`, `backend/tests/test_providers.py`, `backend/tests/test_ebay_provider.py`, `backend/tests/test_aggregation.py` | IN SVILUPPO  |
+| REQ-019 | Test backend                    | RUOLI_E_STANDARD.md    | `backend/tests/test_app.py`, `backend/tests/test_network.py`, `backend/tests/test_providers.py`, `backend/tests/test_ebay_provider.py`, `backend/tests/test_aggregation.py`, `backend/tests/test_health.py`, `backend/tests/conftest.py`, `backend/pyproject.toml` | `backend/tests/test_app.py`, `backend/tests/test_network.py`, `backend/tests/test_providers.py`, `backend/tests/test_ebay_provider.py`, `backend/tests/test_aggregation.py`, `backend/tests/test_health.py` | IN SVILUPPO  |
 | REQ-020 | Test frontend                   | RUOLI_E_STANDARD.md    | Non presente         | Non presente    | NON INIZIATO |
 | REQ-021 | Prometheus                      | ARCHITETTURA.md        | `docker-compose.yml`, `docker/prometheus/prometheus.yml` | Non presente    | IN SVILUPPO  |
 | REQ-022 | Grafana                         | ARCHITETTURA.md        | `docker-compose.yml`, `docker/grafana/provisioning/datasources/prometheus.yml` | Non presente    | IN SVILUPPO  |
@@ -1098,6 +1098,7 @@ Nessuna deviazione registrata.
 | ISSUE-004 | Strategia proxy di produzione non definita       | MEDIA   | Network    | APERTO | Definire `ProxyProvider` e integrarlo nel client condiviso |
 | ISSUE-005 | Daemon Docker locale non disponibile per `compose up` | MEDIA   | DevOps     | APERTO | Ripetere il test con Docker Desktop attivo |
 | ISSUE-006 | `pytest` backend bloccato in fase di collection nell'ambiente locale | MEDIA   | Testing    | RISOLTO | Disabilitato `cacheprovider` e stabilizzato il path dei test con `conftest.py` |
+| ISSUE-007 | Il controllo database di `/health` resta degradato senza driver `asyncpg` o servizio PostgreSQL raggiungibile | MEDIA   | API        | APERTO | Introdurre il layer PostgreSQL e completare la dipendenza runtime del driver |
 
 ---
 
@@ -1105,7 +1106,7 @@ Nessuna deviazione registrata.
 
 | ID      | Descrizione                             | Origine | Priorità | Stato |
 | ------- | --------------------------------------- | ------- | -------- | ----- |
-| Nessuno | Nessun debito tecnico ancora registrato | -       | -        | -     |
+| DEBT-001 | Il controllo `GET /health` usa connessioni effimere per Redis e database finche non esistono client condivisi dedicati | Endpoint `/health` | MEDIA | APERTO |
 
 Codex deve aggiungere una voce quando introduce consapevolmente una soluzione temporanea.
 
@@ -1251,6 +1252,46 @@ Risultato: SUPERATO
 Test superati: verifica formattazione backend dopo l'aggiunta dei test di rete
 Test falliti: Nessuno
 Note: la scrittura diretta della cache Ruff resta non affidabile nell'ambiente locale, ma il controllo in sola lettura termina correttamente.
+
+Data: 2026-07-22
+Comando: poetry check
+Ambiente: locale, directory `backend/`
+Risultato: SUPERATO
+Test superati: validazione metadata backend dopo l'introduzione del primo endpoint `GET /health`
+Test falliti: Nessuno
+Note: nessuna dipendenza aggiuntiva introdotta; il controllo conferma il wiring del nuovo servizio health.
+
+Data: 2026-07-22
+Comando: poetry run pytest tests/test_app.py tests/test_health.py -q
+Ambiente: locale, directory `backend/`
+Risultato: SUPERATO
+Test superati: wiring lifecycle FastAPI, response model health e mapping dello status HTTP 200/503
+Test falliti: Nessuno
+Note: i controlli Redis e database sono simulati localmente con stub asincroni.
+
+Data: 2026-07-22
+Comando: poetry run pytest tests/test_app.py tests/test_network.py tests/test_providers.py tests/test_ebay_provider.py tests/test_aggregation.py tests/test_health.py -q
+Ambiente: locale, directory `backend/`
+Risultato: SUPERATO
+Test superati: suite backend completa, inclusi health endpoint, controlli runtime e regressioni dei moduli esistenti
+Test falliti: Nessuno
+Note: confermato che l'aggiunta di `RuntimeHealthService` non altera l'Aggregation Engine o il wiring provider.
+
+Data: 2026-07-22
+Comando: poetry run ruff check . --no-cache
+Ambiente: locale, directory `backend/`
+Risultato: SUPERATO
+Test superati: lint backend dopo l'aggiunta dei modelli e del servizio health
+Test falliti: Nessuno
+Note: risolto l'ordinamento import manualmente a causa dei limiti di scrittura della cache Ruff.
+
+Data: 2026-07-22
+Comando: poetry run ruff format --check . --no-cache
+Ambiente: locale, directory `backend/`
+Risultato: SUPERATO
+Test superati: verifica formattazione backend dopo l'aggiunta dell'endpoint `GET /health`
+Test falliti: Nessuno
+Note: il controllo in sola lettura conferma che i nuovi file rispettano il formatter del progetto.
 ```
 
 ---
@@ -1331,6 +1372,10 @@ Questa sezione deve contenere soltanto comandi realmente eseguiti con successo.
 | `poetry run pytest tests/test_app.py tests/test_network.py tests/test_providers.py tests/test_ebay_provider.py tests/test_aggregation.py -q` | OK | 2026-07-22 | Test backend completi, inclusi conteggi pipeline, fallimenti parziali e durata delle metriche aggregate, superati |
 | `poetry run ruff check . --no-cache` | OK | 2026-07-22 | Lint backend superato dopo l'aggiunta di `AggregationMetrics` e dell'instrumentation minima del servizio |
 | `poetry run ruff format --check . --no-cache` | OK | 2026-07-22 | Formattazione backend verificata dopo i test delle metriche aggregate |
+| `poetry run pytest tests/test_app.py tests/test_health.py -q` | OK | 2026-07-22 | Wiring applicativo, response model health e mapping HTTP 200/503 superati |
+| `poetry run pytest tests/test_app.py tests/test_network.py tests/test_providers.py tests/test_ebay_provider.py tests/test_aggregation.py tests/test_health.py -q` | OK | 2026-07-22 | Suite backend completa superata dopo l'aggiunta di `GET /health` |
+| `poetry run ruff check . --no-cache` | OK | 2026-07-22 | Lint backend superato dopo modelli, servizio ed endpoint health |
+| `poetry run ruff format --check . --no-cache` | OK | 2026-07-22 | Formattazione backend verificata dopo il nuovo endpoint health |
 | `poetry run ruff check . --no-cache` | OK | 2026-07-20 | Lint backend superato dopo l'estensione delle validazioni di `SearchResult` |
 | `poetry run ruff format --check . --no-cache` | OK | 2026-07-20 | Formattazione backend verificata dopo i nuovi test del modello |
 | `poetry check`           | OK    | 2026-07-20 | Metadata backend verificati dopo l'introduzione di `EbayProvider` |
@@ -3034,6 +3079,88 @@ Le metriche sono disponibili solo nel contratto applicativo di aggregazione e no
 
 ```text
 Implementare il primo endpoint `GET /health` di FastAPI.
+```
+
+---
+
+## 2026-07-22 - Primo endpoint `GET /health` di FastAPI
+
+### Obiettivo
+
+Implementare il primo endpoint health del backend FastAPI con un contratto di risposta tipizzato e controlli runtime separati per backend, Redis e database.
+
+### Requisiti Coinvolti
+
+* REQ-013
+* REQ-019
+* REQ-025
+
+### File Analizzati
+
+* `OBIETTIVI_E_ROADMAP.md`
+* `STACK_E_TECNOLOGIE.md`
+* `RUOLI_E_STANDARD.md`
+* `ARCHITETTURA.md`
+* `CODEX_WORKFLOW.md`
+* `PROGRESS.md`
+* `backend/README.md`
+* `backend/pyproject.toml`
+* `backend/app/main.py`
+* `backend/app/api/router.py`
+* `backend/app/core/config.py`
+* `backend/app/models/__init__.py`
+* `backend/app/providers/models.py`
+* `backend/app/services/__init__.py`
+* `backend/tests/test_app.py`
+
+### File Creati
+
+* `backend/app/models/health.py`
+* `backend/app/services/health.py`
+* `backend/tests/test_health.py`
+
+### File Modificati
+
+* `backend/README.md`
+* `backend/app/models/__init__.py`
+* `backend/app/services/__init__.py`
+* `backend/app/api/router.py`
+* `backend/app/main.py`
+* `backend/tests/test_app.py`
+* `PROGRESS.md`
+
+### File Eliminati
+
+* Nessuno
+
+### Implementazione
+
+Introdotti `HealthResponse`, `HealthChecks` e `DependencyHealth` come contratto tipizzato del nuovo endpoint `GET /health`. Il lifespan FastAPI registra `RuntimeHealthService`, che verifica backend, Redis e database in parallelo e restituisce `200` quando tutti i controlli sono `up`, oppure `503` con stato `degraded` quando almeno una dipendenza fallisce. Il controllo database gestisce esplicitamente il caso `driver_not_installed`, coerente con l'assenza attuale del layer PostgreSQL completo.
+
+### Test Eseguiti
+
+* `poetry check` - superato
+* `poetry run pytest tests/test_app.py tests/test_health.py -q` - superato
+* `poetry run pytest tests/test_app.py tests/test_network.py tests/test_providers.py tests/test_ebay_provider.py tests/test_aggregation.py tests/test_health.py -q` - superato
+* `poetry run ruff check . --no-cache` - superato
+* `poetry run ruff format --check . --no-cache` - superato
+
+### Stato Finale
+
+```text
+COMPLETATO
+```
+
+### Problemi Rilevati
+
+```text
+Il controllo database di `GET /health` resta degradato finche il driver `asyncpg` non e disponibile o il servizio PostgreSQL non e raggiungibile; inoltre Redis e database sono verificati con connessioni effimere finche non esistono client condivisi dedicati.
+```
+
+### Prossimo Passo
+
+```text
+Implementare il primo endpoint `GET /search` di FastAPI.
 ```
 
 ---

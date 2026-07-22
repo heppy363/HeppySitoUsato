@@ -7,7 +7,7 @@ from app.api.router import api_router
 from app.core.config import Settings, get_settings
 from app.network import HttpxNetworkClient
 from app.providers import ProviderRegistry, maybe_build_ebay_provider
-from app.services import RegistryAggregationService
+from app.services import RegistryAggregationService, RuntimeHealthService
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -20,6 +20,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         provider_registry = ProviderRegistry()
         app.state.providers = provider_registry
         app.state.aggregation_service = RegistryAggregationService(provider_registry)
+        app.state.health_service = RuntimeHealthService(
+            settings=app_settings,
+            network_client=network_client,
+            provider_registry=provider_registry,
+            aggregation_service=app.state.aggregation_service,
+        )
         app.state.ebay_provider = maybe_build_ebay_provider(
             settings=app_settings,
             network_client=network_client,

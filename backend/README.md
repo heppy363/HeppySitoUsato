@@ -8,6 +8,7 @@ Il backend include:
 
 * bootstrap FastAPI con settings centralizzati;
 * endpoint `GET /health` con response model tipizzato e stato HTTP coerente (`200` quando backend, Redis e database sono operativi; `503` in caso di stato degradato);
+* endpoint `GET /search` con validazione della query, paginazione, selezione piattaforme, filtri prezzo, risposta aggregata tipizzata, errore `400` per piattaforme sconosciute e schema OpenAPI generato automaticamente;
 * package `app/network/` con contratto `NetworkClient`, implementazione `HttpxNetworkClient`, modelli di richiesta e gerarchia di errori;
 * package `app/providers/` con contratto `MarketplaceProvider`, modelli condivisi di ricerca, registry runtime dei provider e mapping degli errori provider;
 * package `app/services/` con il primo contratto dell'Aggregation Engine sopra `ProviderRegistry`, basato su `AggregationRequest`, `AggregationResponse`, `AggregationMetrics`, `RegistryAggregationService` e `RankingService`, con esecuzione parallela iniziale via `asyncio.gather`, deduplicazione per `(platform, external_id)`, primo merge conservativo, ranking euristico iniziale, primi filtri prezzo, ordinamento finale deterministico e metriche iniziali di provider, pipeline e durata della ricerca aggregata, oltre a `RuntimeHealthService` per i controlli di backend, Redis e database;
@@ -15,13 +16,13 @@ Il backend include:
 * lifespan FastAPI che costruisce un solo `HttpxNetworkClient` condiviso, registra `RuntimeHealthService` e registra `EbayProvider` in un `ProviderRegistry` esposto in `app.state` quando la configurazione eBay e disponibile;
 * configurazione `BACKEND_NETWORK_*` per timeout, limiti di connessione, retry, HTTP/2 opzionale e strategia proxy tipizzata (`direct`, `datacenter`, `residential`, `tor`);
 * configurazione `BACKEND_EBAY_API_*` per ambiente (`production` o `sandbox`), marketplace, scope OAuth e credenziali/token dell'integrazione eBay;
-* test backend, health endpoint e network layer basati su `httpx.MockTransport` e fixture locali.
+* test backend, health endpoint, search endpoint e network layer basati su `httpx.MockTransport` e fixture locali.
 
 ## Verifica locale
 
 ```bash
 poetry check
-poetry run pytest tests/test_app.py tests/test_network.py tests/test_providers.py tests/test_ebay_provider.py tests/test_aggregation.py tests/test_health.py -q
+poetry run pytest tests/test_app.py tests/test_network.py tests/test_providers.py tests/test_ebay_provider.py tests/test_aggregation.py tests/test_health.py tests/test_search.py -q
 poetry run ruff check . --no-cache
 poetry run ruff format --check . --no-cache
 ```

@@ -107,13 +107,13 @@ IN SVILUPPO
 ## Fase Corrente
 
 ```text
-Primo endpoint health di FastAPI
+Primo endpoint search di FastAPI
 ```
 
 ## Percentuale Indicativa
 
 ```text
-71%
+73%
 ```
 
 La percentuale è indicativa e non deve essere calcolata esclusivamente sul numero di file creati.
@@ -123,15 +123,15 @@ Deve riflettere il completamento reale delle macro aree previste nella roadmap.
 ## Ultimo Aggiornamento
 
 ```text
-Data: 2026-07-22
+Data: 2026-07-24
 Responsabile: Codex
-Attivita: Implementazione del primo endpoint `GET /health` di FastAPI con controlli runtime di backend, Redis e database
+Attivita: Implementazione del primo endpoint `GET /search` di FastAPI con query model validato, risposta aggregata tipizzata, gestione delle piattaforme sconosciute e OpenAPI verificata
 ```
 
 ## Prossimo Passo Approvato
 
 ```text
-Implementare il primo endpoint `GET /search` di FastAPI.
+Validare e implementare il primo parametro di ordinamento configurabile di `GET /search`.
 ```
 
 Codex non deve iniziare automaticamente attività successive oltre il prossimo passo approvato.
@@ -150,13 +150,13 @@ Codex non deve iniziare automaticamente attività successive oltre il prossimo p
 | Cache Redis             | NON INIZIATO |          0% | Solo servizio Docker, cache applicativa assente |
 | PostgreSQL e Migrazioni | NON INIZIATO |          0% | Solo servizio Docker, ORM e Alembic assenti |
 | Worker e Code           | NON INIZIATO |          0% | Solo placeholder Docker, tecnologia non selezionata |
-| API FastAPI             | IN SVILUPPO  |         20% | Endpoint `GET /health` presente con response model, stato HTTP coerente e controlli runtime di backend, Redis e database |
+| API FastAPI             | IN SVILUPPO  |         45% | Endpoint `GET /health` presente; primo `GET /search` disponibile con query model, filtri prezzo, piattaforme, error response tipizzata e OpenAPI verificata |
 | Streaming Risultati     | NON INIZIATO |          0% | SSE o WebSocket non definiti      |
 | Frontend Vue            | IN SVILUPPO  |         50% | Vite, struttura Vue e immagine Docker inizializzati |
 | State Management        | IN SVILUPPO  |         15% | Pinia configurato con store iniziale |
 | Server State            | IN SVILUPPO  |         15% | TanStack Query configurato con query client base |
 | Interfaccia Grafica     | IN SVILUPPO  |         10% | Shell UI iniziale presente, feature di ricerca assenti |
-| Testing                 | IN SVILUPPO  |         82% | Test backend, network layer, lifecycle applicativo, `ProviderRegistry`, aggregazione parallela con errore parziale, deduplicazione, merge iniziale, ranking euristico, filtri prezzo, ordinamento finale, metriche iniziali, health endpoint e validazione modelli con primo provider concreto e adapter ufficiale presenti |
+| Testing                 | IN SVILUPPO  |         84% | Test backend, network layer, lifecycle applicativo, `ProviderRegistry`, aggregazione parallela con errore parziale, deduplicazione, merge iniziale, ranking euristico, filtri prezzo, ordinamento finale, metriche iniziali, health endpoint, search endpoint, OpenAPI e validazione modelli con primo provider concreto e adapter ufficiale presenti |
 | Monitoring              | IN SVILUPPO  |         15% | Servizi base presenti; prime metriche applicative dell'Aggregation Engine disponibili nella response, ma endpoint e dashboard restano da implementare |
 | Sicurezza               | NON INIZIATO |          0% | Controlli non implementati        |
 | Documentazione          | IN SVILUPPO  |         99% | Documenti principali verificati, variabili eBay documentate e progresso aggiornato |
@@ -676,17 +676,17 @@ GET /health
 GET /search
 ```
 
-* [ ] Endpoint creato
-* [ ] Query validata
-* [ ] Lunghezza minima definita
-* [ ] Lunghezza massima definita
-* [ ] Filtri validati
+* [x] Endpoint creato
+* [x] Query validata
+* [x] Lunghezza minima definita
+* [x] Lunghezza massima definita
+* [x] Filtri validati
 * [ ] Ordinamento validato
-* [ ] Response model definito
-* [ ] Error response definita
+* [x] Response model definito
+* [x] Error response definita
 * [ ] Rate limiting configurato
-* [ ] Documentazione OpenAPI aggiornata
-* [ ] Test presente
+* [x] Documentazione OpenAPI aggiornata
+* [x] Test presente
 
 ## Streaming
 
@@ -936,12 +936,12 @@ Questa tabella deve collegare ogni requisito ai file reali che lo implementano.
 | REQ-011 | PostgreSQL e Alembic            | STACK_E_TECNOLOGIE.md  | Non presente         | Non presente    | NON INIZIATO |
 | REQ-012 | Worker asincrono                | OBIETTIVI_E_ROADMAP.md | Non presente         | Non presente    | NON INIZIATO |
 | REQ-013 | Endpoint `/health`              | OBIETTIVI_E_ROADMAP.md | `backend/app/api/router.py`, `backend/app/models/health.py`, `backend/app/services/health.py`, `backend/app/main.py` | `backend/tests/test_app.py`, `backend/tests/test_health.py` | COMPLETATO |
-| REQ-014 | Endpoint `/search`              | OBIETTIVI_E_ROADMAP.md | Non presente         | Non presente    | NON INIZIATO |
+| REQ-014 | Endpoint `/search`              | OBIETTIVI_E_ROADMAP.md | `backend/app/api/router.py`, `backend/app/models/search.py`, `backend/app/models/__init__.py` | `backend/tests/test_search.py` | IN SVILUPPO  |
 | REQ-015 | Streaming progressivo           | ARCHITETTURA.md        | Non presente         | Non presente    | NON INIZIATO |
 | REQ-016 | Pinia                           | STACK_E_TECNOLOGIE.md  | `frontend/package.json`, `frontend/src/main.js`, `frontend/src/stores/search-filters.js` | Non presente    | IN SVILUPPO  |
 | REQ-017 | TanStack Query                  | STACK_E_TECNOLOGIE.md  | `frontend/package.json`, `frontend/src/main.js`, `frontend/src/utils/query-client.js` | Non presente    | IN SVILUPPO  |
 | REQ-018 | Tailwind dark mode              | STACK_E_TECNOLOGIE.md  | `frontend/tailwind.config.js`, `frontend/src/style.css`, `frontend/src/components/AppShell.vue` | Non presente    | IN SVILUPPO  |
-| REQ-019 | Test backend                    | RUOLI_E_STANDARD.md    | `backend/tests/test_app.py`, `backend/tests/test_network.py`, `backend/tests/test_providers.py`, `backend/tests/test_ebay_provider.py`, `backend/tests/test_aggregation.py`, `backend/tests/test_health.py`, `backend/tests/conftest.py`, `backend/pyproject.toml` | `backend/tests/test_app.py`, `backend/tests/test_network.py`, `backend/tests/test_providers.py`, `backend/tests/test_ebay_provider.py`, `backend/tests/test_aggregation.py`, `backend/tests/test_health.py` | IN SVILUPPO  |
+| REQ-019 | Test backend                    | RUOLI_E_STANDARD.md    | `backend/tests/test_app.py`, `backend/tests/test_network.py`, `backend/tests/test_providers.py`, `backend/tests/test_ebay_provider.py`, `backend/tests/test_aggregation.py`, `backend/tests/test_health.py`, `backend/tests/test_search.py`, `backend/tests/conftest.py`, `backend/pyproject.toml` | `backend/tests/test_app.py`, `backend/tests/test_network.py`, `backend/tests/test_providers.py`, `backend/tests/test_ebay_provider.py`, `backend/tests/test_aggregation.py`, `backend/tests/test_health.py`, `backend/tests/test_search.py` | IN SVILUPPO  |
 | REQ-020 | Test frontend                   | RUOLI_E_STANDARD.md    | Non presente         | Non presente    | NON INIZIATO |
 | REQ-021 | Prometheus                      | ARCHITETTURA.md        | `docker-compose.yml`, `docker/prometheus/prometheus.yml` | Non presente    | IN SVILUPPO  |
 | REQ-022 | Grafana                         | ARCHITETTURA.md        | `docker-compose.yml`, `docker/grafana/provisioning/datasources/prometheus.yml` | Non presente    | IN SVILUPPO  |
@@ -3161,6 +3161,87 @@ Il controllo database di `GET /health` resta degradato finche il driver `asyncpg
 
 ```text
 Implementare il primo endpoint `GET /search` di FastAPI.
+```
+
+---
+
+## 2026-07-24 - Primo endpoint `GET /search` di FastAPI
+
+### Obiettivo
+
+Implementare il primo endpoint search del backend FastAPI esponendo l'Aggregation Engine tramite query model validato, risposta tipizzata ed errore coerente per piattaforme sconosciute.
+
+### Requisiti Coinvolti
+
+* REQ-014
+* REQ-019
+* REQ-025
+
+### File Analizzati
+
+* `OBIETTIVI_E_ROADMAP.md`
+* `STACK_E_TECNOLOGIE.md`
+* `RUOLI_E_STANDARD.md`
+* `ARCHITETTURA.md`
+* `CODEX_WORKFLOW.md`
+* `PROGRESS.md`
+* `backend/README.md`
+* `backend/pyproject.toml`
+* `backend/app/api/router.py`
+* `backend/app/main.py`
+* `backend/app/models/__init__.py`
+* `backend/app/models/health.py`
+* `backend/app/providers/models.py`
+* `backend/app/services/__init__.py`
+* `backend/app/services/aggregation.py`
+* `backend/tests/test_aggregation.py`
+* `backend/tests/test_app.py`
+* `backend/tests/test_health.py`
+
+### File Creati
+
+* `backend/app/models/search.py`
+* `backend/tests/test_search.py`
+
+### File Modificati
+
+* `backend/app/api/router.py`
+* `backend/app/models/__init__.py`
+* `backend/README.md`
+* `PROGRESS.md`
+
+### File Eliminati
+
+* Nessuno
+
+### Implementazione
+
+Introdotti `SearchQueryParams`, `SearchResponse` e `SearchErrorResponse` come contratto del nuovo endpoint `GET /search`. Il router FastAPI valida query, paginazione e filtri prezzo tramite query model, converte la richiesta in `AggregationRequest`, richiama `AggregationService` senza inserire logica di business nel router, restituisce la risposta aggregata tipizzata e mappa `AggregationProviderSelectionError` verso `400` con payload coerente. I test coprono risposta `200`, errore `400`, validazione `422` e presenza dell'endpoint nello schema OpenAPI.
+
+### Test Eseguiti
+
+* `poetry check` - superato
+* `poetry run pytest tests/test_search.py -q` - superato
+* `poetry run pytest tests/test_app.py tests/test_network.py tests/test_providers.py tests/test_ebay_provider.py tests/test_aggregation.py tests/test_health.py tests/test_search.py -q` - superato
+* `poetry run ruff check . --no-cache` - superato
+* `poetry run ruff format --check . --no-cache` - superato
+
+### Stato Finale
+
+```text
+COMPLETATO
+```
+
+### Problemi Rilevati
+
+```text
+Il nuovo endpoint `GET /search` non espone ancora un parametro di ordinamento configurabile dall'utente e non applica ancora rate limiting dedicato, quindi la macro area API FastAPI resta in sviluppo.
+```
+
+### Prossimo Passo
+
+```text
+Validare e implementare il primo parametro di ordinamento configurabile di `GET /search`.
 ```
 
 ---

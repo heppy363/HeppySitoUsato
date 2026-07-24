@@ -1,8 +1,20 @@
-from fastapi import APIRouter, Request, status
+from typing import Annotated
+
+from fastapi import APIRouter, Query, Request, status
 from fastapi.responses import JSONResponse
 
-from app.models import HealthResponse
-from app.services import HealthService
+from app.models import (
+    HealthResponse,
+    SearchErrorCode,
+    SearchErrorResponse,
+    SearchQueryParams,
+    SearchResponse,
+)
+from app.services import (
+    AggregationProviderSelectionError,
+    AggregationService,
+    HealthService,
+)
 
 api_router = APIRouter()
 
@@ -19,4 +31,35 @@ async def healthcheck(request: Request) -> JSONResponse:
     return JSONResponse(
         status_code=status_code,
         content=response.model_dump(mode="json"),
+    )
+
+
+@api_router.get(
+    "/search",
+    response_model=SearchResponse,
+    responses={status.HTTP_400_BAD_REQUEST: {"model": SearchErrorResponse}},
+    summary="Aggregated marketplace search",
+)
+async def search(
+    request: Request,
+    params: Annotated[SearchQueryParams, Query()],
+) -> JSONResponse:
+    aggregation_service: AggregationService = request.app.state.aggregation_service
+
+    try:
+        response = await aggregation_service.search(params.to_aggregation_request())
+    except AggregationProviderSelectionError as exc:
+        error_response = SearchErrorResponse(
+            error_code=SearchErrorCode.UNKNOWN_PLATFORM,
+            detail=str(exc),
+            unknown_platforms=exc.unknown_platforms,
+        )
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content=error_response.model_dump(mode="json"),
+        )
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content=SearchResponse.from_aggregation_response(response).model_dump(mode="json"),
     )

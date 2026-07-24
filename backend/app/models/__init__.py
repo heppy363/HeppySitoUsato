@@ -7,6 +7,12 @@ from app.models.health import (
     HealthResponse,
     HealthResponseStatus,
 )
+from app.models.search import (
+    SearchErrorCode,
+    SearchErrorResponse,
+    SearchQueryParams,
+    SearchResponse,
+)
 
 __all__ = [
     "DependencyHealth",
@@ -14,4 +20,8 @@ __all__ = [
     "HealthChecks",
     "HealthResponse",
     "HealthResponseStatus",
+    "SearchErrorCode",
+    "SearchErrorResponse",
+    "SearchQueryParams",
+    "SearchResponse",
 ]

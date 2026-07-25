@@ -10,6 +10,7 @@ from app.services import (
     AggregationProviderSelectionError,
     AggregationRequest,
     AggregationResponse,
+    SearchSortOption,
 )
 
 
@@ -63,6 +64,7 @@ def test_search_endpoint_returns_200_with_aggregated_results(
                 ("platforms", "subito"),
                 ("min_price", "500"),
                 ("max_price", "1200"),
+                ("sort", "price_asc"),
             ],
         )
 
@@ -113,6 +115,7 @@ def test_search_endpoint_returns_200_with_aggregated_results(
             platforms=[" ebay ", "subito"],
             min_price=500.0,
             max_price=1200.0,
+            sort=SearchSortOption.PRICE_ASC,
         )
     )
 
@@ -168,6 +171,17 @@ def test_search_endpoint_returns_422_for_blank_query() -> None:
     assert response.json()["detail"][0]["msg"] == "Value error, query cannot be blank"
 
 
+def test_search_endpoint_returns_422_for_unknown_sort() -> None:
+    app = create_app()
+
+    with TestClient(app) as client:
+        response = client.get("/search", params={"query": "RTX 3090", "sort": "price_desc"})
+
+    assert response.status_code == 422
+    assert "relevance" in response.json()["detail"][0]["msg"]
+    assert "price_asc" in response.json()["detail"][0]["msg"]
+
+
 def test_search_endpoint_is_exposed_in_openapi_schema() -> None:
     app = create_app()
 
@@ -177,5 +191,9 @@ def test_search_endpoint_is_exposed_in_openapi_schema() -> None:
     assert response.status_code == 200
     search_operation = response.json()["paths"]["/search"]["get"]
     assert search_operation["summary"] == "Aggregated marketplace search"
+    sort_parameter = next(
+        parameter for parameter in search_operation["parameters"] if parameter["name"] == "sort"
+    )
+    assert sort_parameter["schema"]["default"] == SearchSortOption.RELEVANCE.value
     assert search_operation["responses"]["200"]["description"] == "Successful Response"
     assert search_operation["responses"]["400"]["description"] == "Bad Request"

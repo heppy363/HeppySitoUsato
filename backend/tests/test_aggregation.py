@@ -22,6 +22,7 @@ from app.services import (
     AggregationResponse,
     RankingService,
     RegistryAggregationService,
+    SearchSortOption,
 )
 
 
@@ -424,17 +425,8 @@ async def test_registry_aggregation_service_filters_results_by_price_range() -> 
     )
 
     assert response.failures == ()
-    assert response.results == (
-        SearchResult(
-            id="ebay:target",
-            external_id="target",
-            title="RTX 3090 target",
-            price=150.0,
-            currency="EUR",
-            platform="ebay",
-            url="https://example.com/items/target",
-        ),
-    )
+    assert tuple(result.external_id for result in response.results) == ("target",)
+    assert response.results[0].price == 150.0
     assert response.metrics == AggregationMetrics(
         provider_count=1,
         successful_provider_count=1,
@@ -574,6 +566,74 @@ async def test_registry_aggregation_service_applies_deterministic_final_ordering
         "recent-cheap",
         "recent-expensive",
         "no-date",
+    )
+
+
+@pytest.mark.asyncio
+async def test_registry_aggregation_service_supports_price_ascending_sort() -> None:
+    collected_at = datetime(2026, 7, 21, 12, 0, tzinfo=UTC)
+    recent_published_at = datetime(2026, 7, 20, 12, 0, tzinfo=UTC)
+    older_published_at = datetime(2026, 7, 18, 12, 0, tzinfo=UTC)
+    service = RegistryAggregationService(
+        ProviderRegistry(
+            [
+                ResultSetAggregationDummyProvider(
+                    platform="ebay",
+                    results=[
+                        SearchResult(
+                            id="ebay:cheap-lower-score",
+                            external_id="cheap-lower-score",
+                            title="RTX 3090 cheap lower score",
+                            price=120.0,
+                            currency="EUR",
+                            platform="ebay",
+                            url="https://example.com/items/cheap-lower-score",
+                            published_at=older_published_at,
+                            collected_at=collected_at,
+                            relevance_score=0.4,
+                        ),
+                        SearchResult(
+                            id="ebay:mid-higher-score",
+                            external_id="mid-higher-score",
+                            title="RTX 3090 mid higher score",
+                            price=180.0,
+                            currency="EUR",
+                            platform="ebay",
+                            url="https://example.com/items/mid-higher-score",
+                            published_at=recent_published_at,
+                            collected_at=collected_at,
+                            relevance_score=0.9,
+                        ),
+                        SearchResult(
+                            id="ebay:cheap-higher-score",
+                            external_id="cheap-higher-score",
+                            title="RTX 3090 cheap higher score",
+                            price=120.0,
+                            currency="EUR",
+                            platform="ebay",
+                            url="https://example.com/items/cheap-higher-score",
+                            published_at=recent_published_at,
+                            collected_at=collected_at,
+                            relevance_score=0.8,
+                        ),
+                    ],
+                )
+            ]
+        ),
+        ranking_service=PassthroughRankingService(),
+    )
+
+    response = await service.search(
+        AggregationRequest(
+            search=SearchRequest(query="RTX 3090"),
+            sort=SearchSortOption.PRICE_ASC,
+        )
+    )
+
+    assert tuple(result.external_id for result in response.results) == (
+        "cheap-higher-score",
+        "cheap-lower-score",
+        "mid-higher-score",
     )
 
 

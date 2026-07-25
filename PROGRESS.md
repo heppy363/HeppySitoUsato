@@ -113,7 +113,7 @@ Primo endpoint search di FastAPI
 ## Percentuale Indicativa
 
 ```text
-73%
+74%
 ```
 
 La percentuale è indicativa e non deve essere calcolata esclusivamente sul numero di file creati.
@@ -123,15 +123,15 @@ Deve riflettere il completamento reale delle macro aree previste nella roadmap.
 ## Ultimo Aggiornamento
 
 ```text
-Data: 2026-07-24
+Data: 2026-07-25
 Responsabile: Codex
-Attivita: Implementazione del primo endpoint `GET /search` di FastAPI con query model validato, risposta aggregata tipizzata, gestione delle piattaforme sconosciute e OpenAPI verificata
+Attivita: Validazione e implementazione del primo parametro di ordinamento configurabile di `GET /search` con supporto iniziale a `sort=relevance` e `sort=price_asc`
 ```
 
 ## Prossimo Passo Approvato
 
 ```text
-Validare e implementare il primo parametro di ordinamento configurabile di `GET /search`.
+Validare e implementare il rate limiting dedicato di `GET /search`.
 ```
 
 Codex non deve iniziare automaticamente attività successive oltre il prossimo passo approvato.
@@ -146,17 +146,17 @@ Codex non deve iniziare automaticamente attività successive oltre il prossimo p
 | Configurazione Backend  | IN SVILUPPO  |         95% | Poetry, lockfile, struttura FastAPI, lifecycle applicativo, registry provider runtime, primi contratti di aggregazione con esecuzione parallela, modelli normalizzati validati e configurazione eBay ufficiale |
 | Network Layer           | IN SVILUPPO  |         79% | Client condiviso, configurazione proxy astratta, lifecycle con chiusura verificata e test mockati presenti; restano da definire i contratti marketplace |
 | Marketplace Provider    | IN SVILUPPO  |         72% | Contratto comune, `ProviderRegistry` runtime, `EbayProvider` con factory runtime, adapter mockato, adapter Browse API ufficiale e test presenti; verifica live ancora assente |
-| Aggregation Engine      | IN SVILUPPO  |         80% | Contratto registry-backed presente con selezione provider, `asyncio.gather`, isolamento dei fallimenti, raccolta di risultati parziali, deduplicazione per `(platform, external_id)`, primo merge conservativo, ranking euristico iniziale, primi filtri prezzo, ordinamento finale deterministico e prime metriche applicative della risposta aggregata |
+| Aggregation Engine      | IN SVILUPPO  |         83% | Contratto registry-backed presente con selezione provider, `asyncio.gather`, isolamento dei fallimenti, raccolta di risultati parziali, deduplicazione per `(platform, external_id)`, primo merge conservativo, ranking euristico iniziale, primi filtri prezzo, ordinamento finale deterministico, primo ordinamento configurabile (`relevance`, `price_asc`) e prime metriche applicative della risposta aggregata |
 | Cache Redis             | NON INIZIATO |          0% | Solo servizio Docker, cache applicativa assente |
 | PostgreSQL e Migrazioni | NON INIZIATO |          0% | Solo servizio Docker, ORM e Alembic assenti |
 | Worker e Code           | NON INIZIATO |          0% | Solo placeholder Docker, tecnologia non selezionata |
-| API FastAPI             | IN SVILUPPO  |         45% | Endpoint `GET /health` presente; primo `GET /search` disponibile con query model, filtri prezzo, piattaforme, error response tipizzata e OpenAPI verificata |
+| API FastAPI             | IN SVILUPPO  |         52% | Endpoint `GET /health` presente; primo `GET /search` disponibile con query model, filtri prezzo, piattaforme, parametro `sort`, error response tipizzata e OpenAPI verificata |
 | Streaming Risultati     | NON INIZIATO |          0% | SSE o WebSocket non definiti      |
 | Frontend Vue            | IN SVILUPPO  |         50% | Vite, struttura Vue e immagine Docker inizializzati |
 | State Management        | IN SVILUPPO  |         15% | Pinia configurato con store iniziale |
 | Server State            | IN SVILUPPO  |         15% | TanStack Query configurato con query client base |
 | Interfaccia Grafica     | IN SVILUPPO  |         10% | Shell UI iniziale presente, feature di ricerca assenti |
-| Testing                 | IN SVILUPPO  |         84% | Test backend, network layer, lifecycle applicativo, `ProviderRegistry`, aggregazione parallela con errore parziale, deduplicazione, merge iniziale, ranking euristico, filtri prezzo, ordinamento finale, metriche iniziali, health endpoint, search endpoint, OpenAPI e validazione modelli con primo provider concreto e adapter ufficiale presenti |
+| Testing                 | IN SVILUPPO  |         86% | Test backend, network layer, lifecycle applicativo, `ProviderRegistry`, aggregazione parallela con errore parziale, deduplicazione, merge iniziale, ranking euristico, filtri prezzo, ordinamento finale, primo ordinamento configurabile, metriche iniziali, health endpoint, search endpoint, OpenAPI e validazione modelli con primo provider concreto e adapter ufficiale presenti |
 | Monitoring              | IN SVILUPPO  |         15% | Servizi base presenti; prime metriche applicative dell'Aggregation Engine disponibili nella response, ma endpoint e dashboard restano da implementare |
 | Sicurezza               | NON INIZIATO |          0% | Controlli non implementati        |
 | Documentazione          | IN SVILUPPO  |         99% | Documenti principali verificati, variabili eBay documentate e progresso aggiornato |
@@ -681,7 +681,7 @@ GET /search
 * [x] Lunghezza minima definita
 * [x] Lunghezza massima definita
 * [x] Filtri validati
-* [ ] Ordinamento validato
+* [x] Ordinamento validato
 * [x] Response model definito
 * [x] Error response definita
 * [ ] Rate limiting configurato
@@ -936,7 +936,7 @@ Questa tabella deve collegare ogni requisito ai file reali che lo implementano.
 | REQ-011 | PostgreSQL e Alembic            | STACK_E_TECNOLOGIE.md  | Non presente         | Non presente    | NON INIZIATO |
 | REQ-012 | Worker asincrono                | OBIETTIVI_E_ROADMAP.md | Non presente         | Non presente    | NON INIZIATO |
 | REQ-013 | Endpoint `/health`              | OBIETTIVI_E_ROADMAP.md | `backend/app/api/router.py`, `backend/app/models/health.py`, `backend/app/services/health.py`, `backend/app/main.py` | `backend/tests/test_app.py`, `backend/tests/test_health.py` | COMPLETATO |
-| REQ-014 | Endpoint `/search`              | OBIETTIVI_E_ROADMAP.md | `backend/app/api/router.py`, `backend/app/models/search.py`, `backend/app/models/__init__.py` | `backend/tests/test_search.py` | IN SVILUPPO  |
+| REQ-014 | Endpoint `/search`              | OBIETTIVI_E_ROADMAP.md | `backend/app/api/router.py`, `backend/app/models/search.py`, `backend/app/models/__init__.py`, `backend/app/services/aggregation.py`, `backend/app/services/__init__.py` | `backend/tests/test_search.py`, `backend/tests/test_aggregation.py` | IN SVILUPPO  |
 | REQ-015 | Streaming progressivo           | ARCHITETTURA.md        | Non presente         | Non presente    | NON INIZIATO |
 | REQ-016 | Pinia                           | STACK_E_TECNOLOGIE.md  | `frontend/package.json`, `frontend/src/main.js`, `frontend/src/stores/search-filters.js` | Non presente    | IN SVILUPPO  |
 | REQ-017 | TanStack Query                  | STACK_E_TECNOLOGIE.md  | `frontend/package.json`, `frontend/src/main.js`, `frontend/src/utils/query-client.js` | Non presente    | IN SVILUPPO  |
@@ -1292,6 +1292,38 @@ Risultato: SUPERATO
 Test superati: verifica formattazione backend dopo l'aggiunta dell'endpoint `GET /health`
 Test falliti: Nessuno
 Note: il controllo in sola lettura conferma che i nuovi file rispettano il formatter del progetto.
+
+Data: 2026-07-25
+Comando: poetry check
+Ambiente: locale, directory `backend/`
+Risultato: SUPERATO
+Test superati: validazione metadata backend dopo l'introduzione del parametro `sort` per `GET /search`
+Test falliti: Nessuno
+Note: confermato il contratto aggiornato di `AggregationRequest` e dei query model FastAPI.
+
+Data: 2026-07-25
+Comando: poetry run pytest tests/test_aggregation.py tests/test_search.py -q
+Ambiente: locale, directory `backend/`
+Risultato: SUPERATO
+Test superati: ordinamento configurabile iniziale dell'Aggregation Engine, wiring del parametro `sort` su `GET /search`, validazione `422` per valori non supportati e aggiornamento OpenAPI
+Test falliti: Nessuno
+Note: aggiunto un test dedicato per `sort=price_asc` e mantenuto `relevance` come default.
+
+Data: 2026-07-25
+Comando: poetry run ruff check . --no-cache
+Ambiente: locale, directory `backend/`
+Risultato: SUPERATO
+Test superati: lint backend dopo l'introduzione di `SearchSortOption` e del nuovo ordinamento configurabile
+Test falliti: Nessuno
+Note: confermata la coerenza di import, typing e lunghezza linee dopo l'estensione del contratto di ricerca.
+
+Data: 2026-07-25
+Comando: poetry run ruff format --check . --no-cache
+Ambiente: locale, directory `backend/`
+Risultato: SUPERATO
+Test superati: verifica formattazione backend dopo l'introduzione del parametro `sort`
+Test falliti: Nessuno
+Note: nessun file ulteriore da riformattare dopo l'adeguamento della firma del metodo di ordinamento.
 ```
 
 ---
@@ -1302,6 +1334,10 @@ Questa sezione deve contenere soltanto comandi realmente eseguiti con successo.
 
 | Comando                  | Stato | Data       | Note |
 | ------------------------ | ----- | ---------- | ---- |
+| `poetry check`           | OK    | 2026-07-25 | Metadata backend verificati dopo l'introduzione del parametro `sort` |
+| `poetry run pytest tests/test_aggregation.py tests/test_search.py -q` | OK | 2026-07-25 | Test mirati di aggregazione e `GET /search` superati con `sort` configurabile |
+| `poetry run ruff check . --no-cache` | OK | 2026-07-25 | Lint backend superato dopo `SearchSortOption` e il nuovo ordinamento configurabile |
+| `poetry run ruff format --check . --no-cache` | OK | 2026-07-25 | Formattazione backend verificata dopo il parametro `sort` |
 | `rg --files -g "*.md"`   | OK    | 2026-07-15 | Verificati i documenti Markdown del progetto |
 | `docker compose version` | OK    | 2026-07-12 | Docker Compose disponibile nell'ambiente locale |
 | `docker compose config`  | OK    | 2026-07-12 | Configurazione valida anche dopo l'allineamento dei Dockerfile |
@@ -1394,12 +1430,12 @@ Non inserire comandi soltanto ipotizzati.
 
 | File                     | Scopo                        | Stato    | Ultima Verifica              |
 | ------------------------ | ---------------------------- | -------- | ---------------------------- |
-| `OBIETTIVI_E_ROADMAP.md` | Definizione obiettivi e fasi | PRESENTE | Verificato il 2026-07-20 |
-| `STACK_E_TECNOLOGIE.md`  | Tecnologie vincolanti        | PRESENTE | Verificato il 2026-07-20 |
-| `RUOLI_E_STANDARD.md`    | Ruoli e standard tecnici     | PRESENTE | Verificato il 2026-07-20 |
-| `ARCHITETTURA.md`        | Architettura del sistema     | PRESENTE | Verificato il 2026-07-20 |
-| `CODEX_WORKFLOW.md`      | Metodo operativo di Codex    | PRESENTE | Verificato il 2026-07-20 |
-| `PROGRESS.md`            | Stato e tracciamento         | PRESENTE | Aggiornato il 2026-07-20 |
+| `OBIETTIVI_E_ROADMAP.md` | Definizione obiettivi e fasi | PRESENTE | Verificato il 2026-07-25 |
+| `STACK_E_TECNOLOGIE.md`  | Tecnologie vincolanti        | PRESENTE | Verificato il 2026-07-25 |
+| `RUOLI_E_STANDARD.md`    | Ruoli e standard tecnici     | PRESENTE | Verificato il 2026-07-25 |
+| `ARCHITETTURA.md`        | Architettura del sistema     | PRESENTE | Verificato il 2026-07-25 |
+| `CODEX_WORKFLOW.md`      | Metodo operativo di Codex    | PRESENTE | Verificato il 2026-07-25 |
+| `PROGRESS.md`            | Stato e tracciamento         | PRESENTE | Aggiornato il 2026-07-25 |
 
 Codex deve sostituire `Da verificare nel repository` dopo aver verificato la presenza reale dei file.
 
@@ -3242,6 +3278,85 @@ Il nuovo endpoint `GET /search` non espone ancora un parametro di ordinamento co
 
 ```text
 Validare e implementare il primo parametro di ordinamento configurabile di `GET /search`.
+```
+
+---
+
+## 2026-07-25 - Ordinamento configurabile iniziale di `GET /search`
+
+### Obiettivo
+
+Validare e implementare il primo parametro di ordinamento configurabile del backend FastAPI mantenendo il comportamento di default coerente con l'ordinamento per rilevanza gia presente.
+
+### Requisiti Coinvolti
+
+* REQ-014
+* REQ-019
+* REQ-025
+
+### File Analizzati
+
+* `OBIETTIVI_E_ROADMAP.md`
+* `STACK_E_TECNOLOGIE.md`
+* `RUOLI_E_STANDARD.md`
+* `ARCHITETTURA.md`
+* `CODEX_WORKFLOW.md`
+* `PROGRESS.md`
+* `backend/README.md`
+* `backend/app/api/router.py`
+* `backend/app/models/__init__.py`
+* `backend/app/models/search.py`
+* `backend/app/services/__init__.py`
+* `backend/app/services/aggregation.py`
+* `backend/tests/test_aggregation.py`
+* `backend/tests/test_search.py`
+* `frontend/src/stores/search-filters.js`
+
+### File Creati
+
+* Nessuno
+
+### File Modificati
+
+* `backend/README.md`
+* `backend/app/models/search.py`
+* `backend/app/services/__init__.py`
+* `backend/app/services/aggregation.py`
+* `backend/tests/test_aggregation.py`
+* `backend/tests/test_search.py`
+* `PROGRESS.md`
+
+### File Eliminati
+
+* Nessuno
+
+### Implementazione
+
+Introdotto `SearchSortOption` nel contratto di aggregazione e aggiunto il parametro `sort` al query model di `GET /search`, con default `relevance` e prima modalita alternativa `price_asc`. `RegistryAggregationService` seleziona ora la chiave di ordinamento finale in base al criterio richiesto, preservando l'ordinamento deterministico esistente per rilevanza e aggiungendo una variante per prezzo crescente con fallback stabile su rilevanza, freschezza, raccolta e chiavi del risultato. I test coprono sia il wiring dell'endpoint sia il nuovo ordinamento nell'Aggregation Engine, inclusa la validazione `422` per valori `sort` non supportati e l'aggiornamento dello schema OpenAPI.
+
+### Test Eseguiti
+
+* `poetry check` - superato
+* `poetry run pytest tests/test_aggregation.py tests/test_search.py -q` - superato
+* `poetry run ruff check . --no-cache` - superato
+* `poetry run ruff format --check . --no-cache` - superato
+
+### Stato Finale
+
+```text
+COMPLETATO
+```
+
+### Problemi Rilevati
+
+```text
+`GET /search` non applica ancora rate limiting dedicato, quindi il requisito API resta complessivamente in sviluppo.
+```
+
+### Prossimo Passo
+
+```text
+Validare e implementare il rate limiting dedicato di `GET /search`.
 ```
 
 ---

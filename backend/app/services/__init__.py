@@ -9,6 +9,7 @@ from app.services.aggregation import (
     AggregationResponse,
     AggregationService,
     RegistryAggregationService,
+    SearchSortOption,
 )
 from app.services.health import HealthService, RuntimeHealthService
 from app.services.ranking import HeuristicRankingService, RankingService
@@ -26,4 +27,5 @@ __all__ = [
     "RankingService",
     "RegistryAggregationService",
     "RuntimeHealthService",
+    "SearchSortOption",
 ]

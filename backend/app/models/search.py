@@ -8,6 +8,7 @@ from app.services.aggregation import (
     AggregationProviderFailure,
     AggregationRequest,
     AggregationResponse,
+    SearchSortOption,
 )
 
 
@@ -18,6 +19,7 @@ class SearchQueryParams(BaseModel):
     platforms: list[str] | None = None
     min_price: float | None = Field(default=None, ge=0)
     max_price: float | None = Field(default=None, ge=0)
+    sort: SearchSortOption = SearchSortOption.RELEVANCE
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -46,6 +48,7 @@ class SearchQueryParams(BaseModel):
             platforms=self.platforms,
             min_price=self.min_price,
             max_price=self.max_price,
+            sort=self.sort,
         )
 
 

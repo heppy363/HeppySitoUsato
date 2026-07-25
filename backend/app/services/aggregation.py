@@ -2,6 +2,7 @@ import asyncio
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from datetime import datetime
+from enum import Enum
 from time import perf_counter
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -16,11 +17,17 @@ from app.providers import (
 from app.services.ranking import HeuristicRankingService, RankingService
 
 
+class SearchSortOption(str, Enum):
+    RELEVANCE = "relevance"
+    PRICE_ASC = "price_asc"
+
+
 class AggregationRequest(BaseModel):
     search: SearchRequest
     platforms: tuple[str, ...] | None = Field(default=None)
     min_price: float | None = Field(default=None, ge=0)
     max_price: float | None = Field(default=None, ge=0)
+    sort: SearchSortOption = SearchSortOption.RELEVANCE
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -166,7 +173,7 @@ class RegistryAggregationService(AggregationService):
         normalized_results = self._normalize_results(results)
         filtered_results = self._filter_results(request, normalized_results)
         ranked_results = self._ranking_service.rank(request.search, filtered_results)
-        ordered_results = self._order_results(ranked_results)
+        ordered_results = self._order_results(request.sort, ranked_results)
         metrics = AggregationMetrics(
             provider_count=len(providers),
             successful_provider_count=len(providers) - len(failures),
@@ -237,11 +244,17 @@ class RegistryAggregationService(AggregationService):
         return tuple(filtered_results)
 
     @classmethod
-    def _order_results(cls, results: Iterable[SearchResult]) -> tuple[SearchResult, ...]:
-        return tuple(sorted(results, key=cls._result_sort_key))
+    def _order_results(
+        cls,
+        sort: SearchSortOption,
+        results: Iterable[SearchResult],
+    ) -> tuple[SearchResult, ...]:
+        return tuple(sorted(results, key=lambda result: cls._result_sort_key(sort, result)))
 
     @staticmethod
-    def _result_sort_key(result: SearchResult) -> tuple[float, int, float, float, float, str, str]:
+    def _relevance_sort_key(
+        result: SearchResult,
+    ) -> tuple[float, int, float, float, float, str, str]:
         published_present = 0 if result.published_at is not None else 1
         published_timestamp = (
             -result.published_at.timestamp() if result.published_at is not None else 0.0
@@ -257,6 +270,36 @@ class RegistryAggregationService(AggregationService):
             result.platform,
             result.external_id,
         )
+
+    @staticmethod
+    def _price_ascending_sort_key(
+        result: SearchResult,
+    ) -> tuple[float, float, int, float, float, str, str]:
+        published_present = 0 if result.published_at is not None else 1
+        published_timestamp = (
+            -result.published_at.timestamp() if result.published_at is not None else 0.0
+        )
+        collected_timestamp = -result.collected_at.timestamp()
+
+        return (
+            result.price,
+            -result.relevance_score,
+            published_present,
+            published_timestamp,
+            collected_timestamp,
+            result.platform,
+            result.external_id,
+        )
+
+    @classmethod
+    def _result_sort_key(
+        cls,
+        sort: SearchSortOption,
+        result: SearchResult,
+    ) -> tuple[float, ...] | tuple[float, int, float, float, float, str, str]:
+        if sort is SearchSortOption.PRICE_ASC:
+            return cls._price_ascending_sort_key(result)
+        return cls._relevance_sort_key(result)
 
     @staticmethod
     def _result_key(result: SearchResult) -> tuple[str, str]:

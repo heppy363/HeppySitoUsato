@@ -6,13 +6,17 @@ from pydantic import ValidationError
 from redis.exceptions import ConnectionError as RedisConnectionError
 
 from app.core.config import Settings
-from app.providers import SearchRequest, SearchResult
+from app.providers import ProviderRegistry, SearchRequest, SearchResult
 from app.services import (
     AggregationMetrics,
     AggregationRequest,
     AggregationResponse,
+    CachedAggregationService,
     RedisSearchCache,
+    RegistryAggregationService,
+    SearchCache,
     SearchCacheKeyBuilder,
+    SearchCacheUnavailableError,
     SearchSortOption,
 )
 
@@ -179,3 +183,62 @@ async def test_redis_search_cache_rejects_non_positive_ttl(
             aggregation_response,
             ttl_seconds=0,
         )
+
+
+@pytest.mark.asyncio
+async def test_cached_aggregation_service_returns_cache_hit_without_calling_providers(
+    aggregation_request: AggregationRequest,
+    aggregation_response: AggregationResponse,
+) -> None:
+    base_service = RegistryAggregationService(ProviderRegistry())
+    base_service.search = AsyncMock()
+    search_cache = AsyncMock(spec=SearchCache)
+    search_cache.get.return_value = aggregation_response
+    service = CachedAggregationService(base_service, search_cache, ttl_seconds=300)
+
+    response = await service.search(aggregation_request)
+
+    assert response == aggregation_response
+    search_cache.get.assert_awaited_once_with(aggregation_request)
+    base_service.search.assert_not_awaited()
+    search_cache.set.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_cached_aggregation_service_caches_aggregation_miss_with_configured_ttl(
+    aggregation_request: AggregationRequest,
+    aggregation_response: AggregationResponse,
+) -> None:
+    base_service = RegistryAggregationService(ProviderRegistry())
+    base_service.search = AsyncMock(return_value=aggregation_response)
+    search_cache = AsyncMock(spec=SearchCache)
+    search_cache.get.return_value = None
+    service = CachedAggregationService(base_service, search_cache, ttl_seconds=300)
+
+    response = await service.search(aggregation_request)
+
+    assert response == aggregation_response
+    base_service.search.assert_awaited_once_with(aggregation_request)
+    search_cache.set.assert_awaited_once_with(
+        aggregation_request,
+        aggregation_response,
+        ttl_seconds=300,
+    )
+
+
+@pytest.mark.asyncio
+async def test_cached_aggregation_service_fails_open_for_cache_contract_errors(
+    aggregation_request: AggregationRequest,
+    aggregation_response: AggregationResponse,
+) -> None:
+    base_service = RegistryAggregationService(ProviderRegistry())
+    base_service.search = AsyncMock(return_value=aggregation_response)
+    search_cache = AsyncMock(spec=SearchCache)
+    search_cache.get.side_effect = SearchCacheUnavailableError("unavailable")
+    search_cache.set.side_effect = SearchCacheUnavailableError("unavailable")
+    service = CachedAggregationService(base_service, search_cache, ttl_seconds=300)
+
+    response = await service.search(aggregation_request)
+
+    assert response == aggregation_response
+    base_service.search.assert_awaited_once_with(aggregation_request)

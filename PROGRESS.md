@@ -113,7 +113,7 @@ Implementazione della cache Redis
 ## Percentuale Indicativa
 
 ```text
-78%
+79%
 ```
 
 La percentuale è indicativa e non deve essere calcolata esclusivamente sul numero di file creati.
@@ -125,13 +125,13 @@ Deve riflettere il completamento reale delle macro aree previste nella roadmap.
 ```text
 Data: 2026-07-28
 Responsabile: Codex
-Attivita: Implementazione di `RedisSearchCache` con serializzazione tipizzata, TTL esplicito e gestione fail-open
+Attivita: Integrazione di `RedisSearchCache` nel lifecycle e nell'Aggregation Engine tramite `CachedAggregationService`
 ```
 
 ## Prossimo Passo Approvato
 
 ```text
-Integrare `RedisSearchCache` nel lifecycle applicativo e nell'Aggregation Engine con lettura prima dei provider e scrittura dopo l'aggregazione.
+Aggiungere le prime metriche cache per hit, miss ed errori nel flusso di aggregazione.
 ```
 
 Codex non deve iniziare automaticamente attività successive oltre il prossimo passo approvato.
@@ -147,7 +147,7 @@ Codex non deve iniziare automaticamente attività successive oltre il prossimo p
 | Network Layer           | IN SVILUPPO  |         79% | Client condiviso, configurazione proxy astratta, lifecycle con chiusura verificata e test mockati presenti; restano da definire i contratti marketplace |
 | Marketplace Provider    | IN SVILUPPO  |         72% | Contratto comune, `ProviderRegistry` runtime, `EbayProvider` con factory runtime, adapter mockato, adapter Browse API ufficiale e test presenti; verifica live ancora assente |
 | Aggregation Engine      | IN SVILUPPO  |         83% | Contratto registry-backed presente con selezione provider, `asyncio.gather`, isolamento dei fallimenti, raccolta di risultati parziali, deduplicazione per `(platform, external_id)`, primo merge conservativo, ranking euristico iniziale, primi filtri prezzo, ordinamento finale deterministico, primo ordinamento configurabile (`relevance`, `price_asc`) e prime metriche applicative della risposta aggregata |
-| Cache Redis             | IN SVILUPPO  |         48% | Contratto e implementazione Redis presenti con chiavi versionate, serializzazione tipizzata, TTL e fail-open; wiring applicativo e metriche assenti |
+| Cache Redis             | IN SVILUPPO  |         78% | Cache Redis condivisa integrata nel lifecycle e nell'aggregazione con hit, miss, TTL e fail-open; metriche cache ancora assenti |
 | PostgreSQL e Migrazioni | NON INIZIATO |          0% | Solo servizio Docker, ORM e Alembic assenti |
 | Worker e Code           | NON INIZIATO |          0% | Solo placeholder Docker, tecnologia non selezionata |
 | API FastAPI             | IN SVILUPPO  |         62% | Endpoint `GET /health` presente; `GET /search` disponibile con query model, filtri prezzo, piattaforme, parametro `sort`, rate limiting dedicato in-memory, error response tipizzate e OpenAPI verificata |
@@ -576,7 +576,7 @@ I test coprono punteggi nel range [0, 1], titolo esatto sopra titolo parziale, r
 
 ## Requisiti
 
-* [ ] Configurare Redis
+* [x] Configurare Redis
 * [x] Definire cache service
 * [x] Normalizzare chiavi
 * [x] Includere query e filtri nella chiave
@@ -932,7 +932,7 @@ Questa tabella deve collegare ogni requisito ai file reali che lo implementano.
 | REQ-007 | Normalizzazione risultati       | OBIETTIVI_E_ROADMAP.md | `backend/app/providers/models.py`, `backend/app/providers/ebay/mapper.py`, `backend/app/services/aggregation.py` | `backend/tests/test_ebay_provider.py`, `backend/tests/test_aggregation.py` | IN SVILUPPO  |
 | REQ-008 | Aggregazione concorrente        | OBIETTIVI_E_ROADMAP.md | `backend/app/services/aggregation.py`, `backend/app/providers/registry.py`, `backend/app/main.py` | `backend/tests/test_app.py`, `backend/tests/test_aggregation.py` | IN SVILUPPO  |
 | REQ-009 | Ranking risultati               | ARCHITETTURA.md        | `backend/app/services/ranking.py`, `backend/app/services/aggregation.py` | `backend/tests/test_aggregation.py` | IN SVILUPPO  |
-| REQ-010 | Redis cache                     | STACK_E_TECNOLOGIE.md  | `backend/app/services/cache.py`, `backend/app/core/config.py`, `.env.example`, `docker-compose.yml` | `backend/tests/test_cache.py` | IN SVILUPPO |
+| REQ-010 | Redis cache                     | STACK_E_TECNOLOGIE.md  | `backend/app/services/cache.py`, `backend/app/services/cached_aggregation.py`, `backend/app/main.py`, `backend/app/core/config.py`, `.env.example`, `docker-compose.yml` | `backend/tests/test_cache.py`, `backend/tests/test_app.py`, `backend/tests/test_search.py` | IN SVILUPPO |
 | REQ-011 | PostgreSQL e Alembic            | STACK_E_TECNOLOGIE.md  | Non presente         | Non presente    | NON INIZIATO |
 | REQ-012 | Worker asincrono                | OBIETTIVI_E_ROADMAP.md | Non presente         | Non presente    | NON INIZIATO |
 | REQ-013 | Endpoint `/health`              | OBIETTIVI_E_ROADMAP.md | `backend/app/api/router.py`, `backend/app/models/health.py`, `backend/app/services/health.py`, `backend/app/main.py` | `backend/tests/test_app.py`, `backend/tests/test_health.py` | COMPLETATO |
@@ -1382,6 +1382,30 @@ Risultato: SUPERATO
 Test superati: formattazione backend
 Test falliti: Nessuno
 Note: 47 file gia formattati.
+
+Data: 2026-07-28
+Comando: uvx poetry run pytest tests/test_cache.py tests/test_app.py tests/test_search.py tests/test_health.py -q
+Ambiente: locale, directory `backend/`, Python 3.14 gestito dal virtualenv Poetry
+Risultato: SUPERATO
+Test superati: 25
+Test falliti: Nessuno
+Note: verificati cache hit, cache miss, fail-open, TTL, wiring FastAPI, chiusura lifecycle e regressioni API/health.
+
+Data: 2026-07-28
+Comando: uvx poetry run ruff check . --no-cache
+Ambiente: locale, directory `backend/`
+Risultato: SUPERATO
+Test superati: lint backend dopo `CachedAggregationService`
+Test falliti: Nessuno
+Note: nessun errore rilevato.
+
+Data: 2026-07-28
+Comando: uvx poetry run ruff format --check . --no-cache
+Ambiente: locale, directory `backend/`
+Risultato: SUPERATO
+Test superati: formattazione backend
+Test falliti: Nessuno
+Note: 48 file gia formattati.
 ```
 
 ---
@@ -1392,6 +1416,7 @@ Questa sezione deve contenere soltanto comandi realmente eseguiti con successo.
 
 | Comando                  | Stato | Data       | Note |
 | ------------------------ | ----- | ---------- | ---- |
+| `uvx poetry run pytest tests/test_cache.py tests/test_app.py tests/test_search.py tests/test_health.py -q` | OK | 2026-07-28 | 25 test superati dopo il wiring cache |
 | `uvx poetry run pytest tests/test_cache.py tests/test_rate_limit.py tests/test_search.py tests/test_app.py -q` | OK | 2026-07-28 | 19 test superati dopo `RedisSearchCache` |
 | `uvx poetry run pytest tests/test_cache.py tests/test_rate_limit.py tests/test_search.py tests/test_app.py -q` | OK | 2026-07-28 | 15 test mirati superati per cache contract e regressioni API |
 | `uvx poetry run ruff check . --no-cache` | OK | 2026-07-28 | Lint backend superato dopo `SearchCache` |
@@ -3650,6 +3675,81 @@ L'implementazione e verificata con un client Redis simulato; non e ancora regist
 
 ```text
 Integrare `RedisSearchCache` nel lifecycle applicativo e nell'Aggregation Engine con lettura prima dei provider e scrittura dopo l'aggregazione.
+```
+
+---
+
+## 2026-07-28 - Wiring della cache nell'Aggregation Engine
+
+### Obiettivo
+
+Integrare `RedisSearchCache` nel lifecycle FastAPI e nel flusso di aggregazione, leggendo la cache prima dei provider e salvando la risposta aggregata dopo un miss.
+
+### Requisiti Coinvolti
+
+* REQ-008
+* REQ-010
+* REQ-014
+* REQ-019
+* REQ-025
+
+### File Analizzati
+
+* tutti i file Markdown del progetto
+* `backend/app/main.py`
+* `backend/app/services/aggregation.py`
+* `backend/app/services/cache.py`
+* `backend/app/services/health.py`
+* `backend/app/services/__init__.py`
+* `backend/tests/test_app.py`
+* `backend/tests/test_cache.py`
+* `backend/tests/test_search.py`
+
+### File Creati
+
+* `backend/app/services/cached_aggregation.py`
+
+### File Modificati
+
+* `backend/app/main.py`
+* `backend/app/services/__init__.py`
+* `backend/app/services/health.py`
+* `backend/tests/test_app.py`
+* `backend/tests/test_cache.py`
+* `backend/README.md`
+* `PROGRESS.md`
+
+### File Eliminati
+
+* Nessuno
+
+### Implementazione
+
+Introdotto `CachedAggregationService` come decorator del contratto `AggregationService`. Su cache hit restituisce immediatamente la risposta tipizzata senza eseguire provider; su miss delega a `RegistryAggregationService` e salva il risultato con il TTL configurato. Gli errori dichiarati dal contratto cache sono gestiti in fail-open. Il lifecycle costruisce un solo `RedisSearchCache`, espone sia il servizio registry-backed sia il decorator in `app.state` e chiude cache e network client in modo ordinato. `RuntimeHealthService` dipende ora dal contratto generale `AggregationService`.
+
+### Test Eseguiti
+
+* `uvx poetry run pytest tests/test_cache.py tests/test_app.py tests/test_search.py tests/test_health.py -q` - superato, 25 test
+* `uvx poetry run ruff check . --no-cache` - superato
+* `uvx poetry run ruff format --check . --no-cache` - superato
+* `uvx poetry check` - superato
+
+### Stato Finale
+
+```text
+COMPLETATO
+```
+
+### Problemi Rilevati
+
+```text
+Il wiring e verificato con client Redis simulati e senza un servizio Redis live. Le metriche cache non sono ancora presenti.
+```
+
+### Prossimo Passo
+
+```text
+Aggiungere le prime metriche cache per hit, miss ed errori nel flusso di aggregazione.
 ```
 
 ---

@@ -7,7 +7,13 @@ from app.api.router import api_router
 from app.core.config import Settings, get_settings
 from app.network import HttpxNetworkClient
 from app.providers import ProviderRegistry, maybe_build_ebay_provider
-from app.services import RegistryAggregationService, RuntimeHealthService, SlidingWindowRateLimiter
+from app.services import (
+    CachedAggregationService,
+    RedisSearchCache,
+    RegistryAggregationService,
+    RuntimeHealthService,
+    SlidingWindowRateLimiter,
+)
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -19,7 +25,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.network_client = network_client
         provider_registry = ProviderRegistry()
         app.state.providers = provider_registry
-        app.state.aggregation_service = RegistryAggregationService(provider_registry)
+        registry_aggregation_service = RegistryAggregationService(provider_registry)
+        app.state.registry_aggregation_service = registry_aggregation_service
+        search_cache = RedisSearchCache.from_url(app_settings.redis_url)
+        app.state.search_cache = search_cache
+        app.state.aggregation_service = CachedAggregationService(
+            registry_aggregation_service,
+            search_cache,
+            ttl_seconds=app_settings.search_cache_ttl_seconds,
+        )
         app.state.search_rate_limiter = SlidingWindowRateLimiter(
             limit=app_settings.search_rate_limit_requests,
             window_seconds=app_settings.search_rate_limit_window_seconds,
@@ -40,7 +54,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         try:
             yield
         finally:
-            await network_client.aclose()
+            try:
+                await search_cache.aclose()
+            finally:
+                await network_client.aclose()
 
     app = FastAPI(
         title=app_settings.app_name,

@@ -19,6 +19,7 @@ from app.services.cache import (
     SearchCacheSerializationError,
     SearchCacheUnavailableError,
 )
+from app.services.cached_aggregation import CachedAggregationService
 from app.services.health import HealthService, RuntimeHealthService
 from app.services.ranking import HeuristicRankingService, RankingService
 from app.services.rate_limit import RateLimitDecision, SlidingWindowRateLimiter
@@ -31,6 +32,7 @@ __all__ = [
     "AggregationRequest",
     "AggregationResponse",
     "AggregationService",
+    "CachedAggregationService",
     "HealthService",
     "HeuristicRankingService",
     "RankingService",

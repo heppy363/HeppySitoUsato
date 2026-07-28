@@ -17,7 +17,7 @@ from app.models.health import (
 )
 from app.network import HttpxNetworkClient
 from app.providers import ProviderRegistry
-from app.services.aggregation import RegistryAggregationService
+from app.services.aggregation import AggregationService
 
 
 class HealthService(ABC):
@@ -32,7 +32,7 @@ class RuntimeHealthService(HealthService):
         settings: Settings,
         network_client: HttpxNetworkClient,
         provider_registry: ProviderRegistry,
-        aggregation_service: RegistryAggregationService,
+        aggregation_service: AggregationService,
         check_timeout_seconds: float = 1.0,
     ) -> None:
         self.settings = settings

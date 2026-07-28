@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     api_host: str = "0.0.0.0"
     api_port: int = 8000
     redis_url: str = "redis://localhost:6379/0"
+    search_cache_ttl_seconds: int = Field(default=300, ge=1)
     database_url: str = "postgresql+asyncpg://heppysito:change_me@localhost:5432/heppysitousato"
     search_rate_limit_requests: int = Field(default=30, ge=1)
     search_rate_limit_window_seconds: float = Field(default=60.0, gt=0)

@@ -11,6 +11,13 @@ from app.services.aggregation import (
     RegistryAggregationService,
     SearchSortOption,
 )
+from app.services.cache import (
+    SearchCache,
+    SearchCacheError,
+    SearchCacheKeyBuilder,
+    SearchCacheSerializationError,
+    SearchCacheUnavailableError,
+)
 from app.services.health import HealthService, RuntimeHealthService
 from app.services.ranking import HeuristicRankingService, RankingService
 from app.services.rate_limit import RateLimitDecision, SlidingWindowRateLimiter
@@ -29,6 +36,11 @@ __all__ = [
     "RateLimitDecision",
     "RegistryAggregationService",
     "RuntimeHealthService",
+    "SearchCache",
+    "SearchCacheError",
+    "SearchCacheKeyBuilder",
+    "SearchCacheSerializationError",
+    "SearchCacheUnavailableError",
     "SearchSortOption",
     "SlidingWindowRateLimiter",
 ]

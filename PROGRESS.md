@@ -107,13 +107,13 @@ IN SVILUPPO
 ## Fase Corrente
 
 ```text
-Primo endpoint search di FastAPI
+Primo contratto della cache Redis
 ```
 
 ## Percentuale Indicativa
 
 ```text
-76%
+77%
 ```
 
 La percentuale è indicativa e non deve essere calcolata esclusivamente sul numero di file creati.
@@ -125,13 +125,13 @@ Deve riflettere il completamento reale delle macro aree previste nella roadmap.
 ```text
 Data: 2026-07-28
 Responsabile: Codex
-Attivita: Implementazione del rate limiting dedicato in-memory di `GET /search`, configurabile per client e con risposta tipizzata `429`
+Attivita: Definizione del contratto asincrono `SearchCache`, della chiave deterministica versionata e del TTL configurabile
 ```
 
 ## Prossimo Passo Approvato
 
 ```text
-Definire il primo contratto della cache Redis per le ricerche aggregate.
+Implementare `RedisSearchCache` sopra il contratto esistente con serializzazione tipizzata e gestione fail-open degli errori Redis.
 ```
 
 Codex non deve iniziare automaticamente attività successive oltre il prossimo passo approvato.
@@ -147,7 +147,7 @@ Codex non deve iniziare automaticamente attività successive oltre il prossimo p
 | Network Layer           | IN SVILUPPO  |         79% | Client condiviso, configurazione proxy astratta, lifecycle con chiusura verificata e test mockati presenti; restano da definire i contratti marketplace |
 | Marketplace Provider    | IN SVILUPPO  |         72% | Contratto comune, `ProviderRegistry` runtime, `EbayProvider` con factory runtime, adapter mockato, adapter Browse API ufficiale e test presenti; verifica live ancora assente |
 | Aggregation Engine      | IN SVILUPPO  |         83% | Contratto registry-backed presente con selezione provider, `asyncio.gather`, isolamento dei fallimenti, raccolta di risultati parziali, deduplicazione per `(platform, external_id)`, primo merge conservativo, ranking euristico iniziale, primi filtri prezzo, ordinamento finale deterministico, primo ordinamento configurabile (`relevance`, `price_asc`) e prime metriche applicative della risposta aggregata |
-| Cache Redis             | NON INIZIATO |          0% | Solo servizio Docker, cache applicativa assente |
+| Cache Redis             | IN SVILUPPO  |         18% | Contratto asincrono, errori dedicati, chiavi deterministiche versionate e TTL configurabile presenti; implementazione Redis e wiring assenti |
 | PostgreSQL e Migrazioni | NON INIZIATO |          0% | Solo servizio Docker, ORM e Alembic assenti |
 | Worker e Code           | NON INIZIATO |          0% | Solo placeholder Docker, tecnologia non selezionata |
 | API FastAPI             | IN SVILUPPO  |         62% | Endpoint `GET /health` presente; `GET /search` disponibile con query model, filtri prezzo, piattaforme, parametro `sort`, rate limiting dedicato in-memory, error response tipizzate e OpenAPI verificata |
@@ -577,9 +577,9 @@ I test coprono punteggi nel range [0, 1], titolo esatto sopra titolo parziale, r
 ## Requisiti
 
 * [ ] Configurare Redis
-* [ ] Definire cache service
-* [ ] Normalizzare chiavi
-* [ ] Includere query e filtri nella chiave
+* [x] Definire cache service
+* [x] Normalizzare chiavi
+* [x] Includere query e filtri nella chiave
 * [ ] Impostare TTL
 * [ ] Gestire cache hit
 * [ ] Gestire cache miss
@@ -932,7 +932,7 @@ Questa tabella deve collegare ogni requisito ai file reali che lo implementano.
 | REQ-007 | Normalizzazione risultati       | OBIETTIVI_E_ROADMAP.md | `backend/app/providers/models.py`, `backend/app/providers/ebay/mapper.py`, `backend/app/services/aggregation.py` | `backend/tests/test_ebay_provider.py`, `backend/tests/test_aggregation.py` | IN SVILUPPO  |
 | REQ-008 | Aggregazione concorrente        | OBIETTIVI_E_ROADMAP.md | `backend/app/services/aggregation.py`, `backend/app/providers/registry.py`, `backend/app/main.py` | `backend/tests/test_app.py`, `backend/tests/test_aggregation.py` | IN SVILUPPO  |
 | REQ-009 | Ranking risultati               | ARCHITETTURA.md        | `backend/app/services/ranking.py`, `backend/app/services/aggregation.py` | `backend/tests/test_aggregation.py` | IN SVILUPPO  |
-| REQ-010 | Redis cache                     | STACK_E_TECNOLOGIE.md  | Non presente         | Non presente    | NON INIZIATO |
+| REQ-010 | Redis cache                     | STACK_E_TECNOLOGIE.md  | `backend/app/services/cache.py`, `backend/app/core/config.py`, `.env.example`, `docker-compose.yml` | `backend/tests/test_cache.py` | IN SVILUPPO |
 | REQ-011 | PostgreSQL e Alembic            | STACK_E_TECNOLOGIE.md  | Non presente         | Non presente    | NON INIZIATO |
 | REQ-012 | Worker asincrono                | OBIETTIVI_E_ROADMAP.md | Non presente         | Non presente    | NON INIZIATO |
 | REQ-013 | Endpoint `/health`              | OBIETTIVI_E_ROADMAP.md | `backend/app/api/router.py`, `backend/app/models/health.py`, `backend/app/services/health.py`, `backend/app/main.py` | `backend/tests/test_app.py`, `backend/tests/test_health.py` | COMPLETATO |
@@ -941,7 +941,7 @@ Questa tabella deve collegare ogni requisito ai file reali che lo implementano.
 | REQ-016 | Pinia                           | STACK_E_TECNOLOGIE.md  | `frontend/package.json`, `frontend/src/main.js`, `frontend/src/stores/search-filters.js` | Non presente    | IN SVILUPPO  |
 | REQ-017 | TanStack Query                  | STACK_E_TECNOLOGIE.md  | `frontend/package.json`, `frontend/src/main.js`, `frontend/src/utils/query-client.js` | Non presente    | IN SVILUPPO  |
 | REQ-018 | Tailwind dark mode              | STACK_E_TECNOLOGIE.md  | `frontend/tailwind.config.js`, `frontend/src/style.css`, `frontend/src/components/AppShell.vue` | Non presente    | IN SVILUPPO  |
-| REQ-019 | Test backend                    | RUOLI_E_STANDARD.md    | `backend/tests/test_app.py`, `backend/tests/test_network.py`, `backend/tests/test_providers.py`, `backend/tests/test_ebay_provider.py`, `backend/tests/test_aggregation.py`, `backend/tests/test_health.py`, `backend/tests/test_search.py`, `backend/tests/conftest.py`, `backend/pyproject.toml` | `backend/tests/test_app.py`, `backend/tests/test_network.py`, `backend/tests/test_providers.py`, `backend/tests/test_ebay_provider.py`, `backend/tests/test_aggregation.py`, `backend/tests/test_health.py`, `backend/tests/test_search.py` | IN SVILUPPO  |
+| REQ-019 | Test backend                    | RUOLI_E_STANDARD.md    | `backend/tests/test_app.py`, `backend/tests/test_network.py`, `backend/tests/test_providers.py`, `backend/tests/test_ebay_provider.py`, `backend/tests/test_aggregation.py`, `backend/tests/test_health.py`, `backend/tests/test_search.py`, `backend/tests/test_rate_limit.py`, `backend/tests/test_cache.py`, `backend/tests/conftest.py`, `backend/pyproject.toml` | `backend/tests/` | IN SVILUPPO  |
 | REQ-020 | Test frontend                   | RUOLI_E_STANDARD.md    | Non presente         | Non presente    | NON INIZIATO |
 | REQ-021 | Prometheus                      | ARCHITETTURA.md        | `docker-compose.yml`, `docker/prometheus/prometheus.yml` | Non presente    | IN SVILUPPO  |
 | REQ-022 | Grafana                         | ARCHITETTURA.md        | `docker-compose.yml`, `docker/grafana/provisioning/datasources/prometheus.yml` | Non presente    | IN SVILUPPO  |
@@ -1326,6 +1326,38 @@ Risultato: SUPERATO
 Test superati: verifica formattazione backend dopo l'introduzione del parametro `sort`
 Test falliti: Nessuno
 Note: nessun file ulteriore da riformattare dopo l'adeguamento della firma del metodo di ordinamento.
+
+Data: 2026-07-28
+Comando: uvx poetry run pytest tests/test_cache.py tests/test_rate_limit.py tests/test_search.py tests/test_app.py -q
+Ambiente: locale, directory `backend/`, Python 3.14 gestito dal virtualenv Poetry
+Risultato: SUPERATO
+Test superati: 15
+Test falliti: Nessuno
+Note: verificati contratto della cache, stabilita e completezza delle chiavi, TTL configurabile e regressioni di rate limiting e API search.
+
+Data: 2026-07-28
+Comando: uvx poetry run ruff check . --no-cache
+Ambiente: locale, directory `backend/`
+Risultato: SUPERATO
+Test superati: lint backend
+Test falliti: Nessuno
+Note: controllo eseguito dopo l'introduzione del contratto `SearchCache`.
+
+Data: 2026-07-28
+Comando: uvx poetry run ruff format --check . --no-cache
+Ambiente: locale, directory `backend/`
+Risultato: SUPERATO
+Test superati: formattazione backend
+Test falliti: Nessuno
+Note: tutti i file backend risultano formattati.
+
+Data: 2026-07-28
+Comando: uvx poetry check
+Ambiente: locale, directory `backend/`
+Risultato: SUPERATO
+Test superati: validazione metadata Poetry
+Test falliti: Nessuno
+Note: nessuna dipendenza aggiunta.
 ```
 
 ---
@@ -1336,6 +1368,10 @@ Questa sezione deve contenere soltanto comandi realmente eseguiti con successo.
 
 | Comando                  | Stato | Data       | Note |
 | ------------------------ | ----- | ---------- | ---- |
+| `uvx poetry run pytest tests/test_cache.py tests/test_rate_limit.py tests/test_search.py tests/test_app.py -q` | OK | 2026-07-28 | 15 test mirati superati per cache contract e regressioni API |
+| `uvx poetry run ruff check . --no-cache` | OK | 2026-07-28 | Lint backend superato dopo `SearchCache` |
+| `uvx poetry run ruff format --check . --no-cache` | OK | 2026-07-28 | Formattazione backend verificata |
+| `uvx poetry check` | OK | 2026-07-28 | Metadata Poetry verificati senza nuove dipendenze |
 | `poetry check`           | OK    | 2026-07-25 | Metadata backend verificati dopo l'introduzione del parametro `sort` |
 | `poetry run pytest tests/test_aggregation.py tests/test_search.py -q` | OK | 2026-07-25 | Test mirati di aggregazione e `GET /search` superati con `sort` configurabile |
 | `poetry run ruff check . --no-cache` | OK | 2026-07-25 | Lint backend superato dopo `SearchSortOption` e il nuovo ordinamento configurabile |
@@ -1432,12 +1468,12 @@ Non inserire comandi soltanto ipotizzati.
 
 | File                     | Scopo                        | Stato    | Ultima Verifica              |
 | ------------------------ | ---------------------------- | -------- | ---------------------------- |
-| `OBIETTIVI_E_ROADMAP.md` | Definizione obiettivi e fasi | PRESENTE | Verificato il 2026-07-25 |
-| `STACK_E_TECNOLOGIE.md`  | Tecnologie vincolanti        | PRESENTE | Verificato il 2026-07-25 |
-| `RUOLI_E_STANDARD.md`    | Ruoli e standard tecnici     | PRESENTE | Verificato il 2026-07-25 |
-| `ARCHITETTURA.md`        | Architettura del sistema     | PRESENTE | Verificato il 2026-07-25 |
-| `CODEX_WORKFLOW.md`      | Metodo operativo di Codex    | PRESENTE | Verificato il 2026-07-25 |
-| `PROGRESS.md`            | Stato e tracciamento         | PRESENTE | Aggiornato il 2026-07-25 |
+| `OBIETTIVI_E_ROADMAP.md` | Definizione obiettivi e fasi | PRESENTE | Verificato il 2026-07-28 |
+| `STACK_E_TECNOLOGIE.md`  | Tecnologie vincolanti        | PRESENTE | Verificato il 2026-07-28 |
+| `RUOLI_E_STANDARD.md`    | Ruoli e standard tecnici     | PRESENTE | Verificato il 2026-07-28 |
+| `ARCHITETTURA.md`        | Architettura del sistema     | PRESENTE | Verificato il 2026-07-28 |
+| `CODEX_WORKFLOW.md`      | Metodo operativo di Codex    | PRESENTE | Verificato il 2026-07-28 |
+| `PROGRESS.md`            | Stato e tracciamento         | PRESENTE | Aggiornato il 2026-07-28 |
 
 Codex deve sostituire `Da verificare nel repository` dopo aver verificato la presenza reale dei file.
 
@@ -3445,6 +3481,80 @@ Il limiter e locale alla singola istanza applicativa: una futura distribuzione m
 
 ```text
 Definire il primo contratto della cache Redis per le ricerche aggregate.
+```
+
+---
+
+## 2026-07-28 - Primo contratto della cache Redis
+
+### Obiettivo
+
+Definire il contratto applicativo della cache per le ricerche aggregate, la generazione delle chiavi e il TTL iniziale senza implementare ancora il client Redis o modificare il flusso di `GET /search`.
+
+### Requisiti Coinvolti
+
+* REQ-010
+* REQ-019
+* REQ-025
+
+### File Analizzati
+
+* tutti i file Markdown del progetto
+* `.env.example`
+* `docker-compose.yml`
+* `backend/pyproject.toml`
+* `backend/app/core/config.py`
+* `backend/app/providers/models.py`
+* `backend/app/services/__init__.py`
+* `backend/app/services/aggregation.py`
+* `backend/app/services/health.py`
+* `backend/tests/test_aggregation.py`
+
+### File Creati
+
+* `backend/app/services/cache.py`
+* `backend/tests/test_cache.py`
+
+### File Modificati
+
+* `.env.example`
+* `docker-compose.yml`
+* `backend/README.md`
+* `backend/app/core/config.py`
+* `backend/app/services/__init__.py`
+* `PROGRESS.md`
+
+### File Eliminati
+
+* Nessuno
+
+### Implementazione
+
+Definiti il contratto asincrono `SearchCache`, gli errori specifici della cache e `SearchCacheKeyBuilder`. Le chiavi sono versionate e bounded (`search:v1:<sha256>`) e derivano dalla serializzazione canonica dell'intera `AggregationRequest`, includendo query normalizzata, paginazione, piattaforme, filtri prezzo e ordinamento. Aggiunto il TTL configurabile `BACKEND_SEARCH_CACHE_TTL_SECONDS`, con valore iniziale validato di 300 secondi. Nessuna dipendenza nuova e nessun accesso Redis sono stati introdotti in questa micro-modifica.
+
+### Test Eseguiti
+
+* `uvx poetry run pytest tests/test_cache.py tests/test_rate_limit.py tests/test_search.py tests/test_app.py -q` - superato, 15 test
+* `uvx poetry run ruff check . --no-cache` - superato
+* `uvx poetry run ruff format --check . --no-cache` - superato
+* `uvx poetry check` - superato
+
+### Stato Finale
+
+```text
+COMPLETATO
+```
+
+### Problemi Rilevati
+
+```text
+Il contratto non e ancora collegato a Redis o all'Aggregation Engine; cache hit, cache miss, serializzazione e comportamento fail-open restano volutamente fuori dal perimetro corrente.
+```
+
+### Prossimo Passo
+
+```text
+Implementare `RedisSearchCache` sopra il contratto esistente con serializzazione tipizzata e gestione fail-open degli errori Redis.
 ```
 
 ---

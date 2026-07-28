@@ -1,6 +1,7 @@
 from functools import lru_cache
 from typing import TYPE_CHECKING
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from app.network.config import (
@@ -25,6 +26,8 @@ class Settings(BaseSettings):
     api_port: int = 8000
     redis_url: str = "redis://localhost:6379/0"
     database_url: str = "postgresql+asyncpg://heppysito:change_me@localhost:5432/heppysitousato"
+    search_rate_limit_requests: int = Field(default=30, ge=1)
+    search_rate_limit_window_seconds: float = Field(default=60.0, gt=0)
     network_http2: bool = True
     network_verify_ssl: bool = True
     network_user_agent: str = "HeppySitoUsato/0.1.0"

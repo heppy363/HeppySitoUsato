@@ -113,7 +113,7 @@ Primo endpoint search di FastAPI
 ## Percentuale Indicativa
 
 ```text
-74%
+76%
 ```
 
 La percentuale è indicativa e non deve essere calcolata esclusivamente sul numero di file creati.
@@ -123,15 +123,15 @@ Deve riflettere il completamento reale delle macro aree previste nella roadmap.
 ## Ultimo Aggiornamento
 
 ```text
-Data: 2026-07-25
+Data: 2026-07-28
 Responsabile: Codex
-Attivita: Validazione e implementazione del primo parametro di ordinamento configurabile di `GET /search` con supporto iniziale a `sort=relevance` e `sort=price_asc`
+Attivita: Implementazione del rate limiting dedicato in-memory di `GET /search`, configurabile per client e con risposta tipizzata `429`
 ```
 
 ## Prossimo Passo Approvato
 
 ```text
-Validare e implementare il rate limiting dedicato di `GET /search`.
+Definire il primo contratto della cache Redis per le ricerche aggregate.
 ```
 
 Codex non deve iniziare automaticamente attività successive oltre il prossimo passo approvato.
@@ -150,7 +150,7 @@ Codex non deve iniziare automaticamente attività successive oltre il prossimo p
 | Cache Redis             | NON INIZIATO |          0% | Solo servizio Docker, cache applicativa assente |
 | PostgreSQL e Migrazioni | NON INIZIATO |          0% | Solo servizio Docker, ORM e Alembic assenti |
 | Worker e Code           | NON INIZIATO |          0% | Solo placeholder Docker, tecnologia non selezionata |
-| API FastAPI             | IN SVILUPPO  |         52% | Endpoint `GET /health` presente; primo `GET /search` disponibile con query model, filtri prezzo, piattaforme, parametro `sort`, error response tipizzata e OpenAPI verificata |
+| API FastAPI             | IN SVILUPPO  |         62% | Endpoint `GET /health` presente; `GET /search` disponibile con query model, filtri prezzo, piattaforme, parametro `sort`, rate limiting dedicato in-memory, error response tipizzate e OpenAPI verificata |
 | Streaming Risultati     | NON INIZIATO |          0% | SSE o WebSocket non definiti      |
 | Frontend Vue            | IN SVILUPPO  |         50% | Vite, struttura Vue e immagine Docker inizializzati |
 | State Management        | IN SVILUPPO  |         15% | Pinia configurato con store iniziale |
@@ -158,7 +158,7 @@ Codex non deve iniziare automaticamente attività successive oltre il prossimo p
 | Interfaccia Grafica     | IN SVILUPPO  |         10% | Shell UI iniziale presente, feature di ricerca assenti |
 | Testing                 | IN SVILUPPO  |         86% | Test backend, network layer, lifecycle applicativo, `ProviderRegistry`, aggregazione parallela con errore parziale, deduplicazione, merge iniziale, ranking euristico, filtri prezzo, ordinamento finale, primo ordinamento configurabile, metriche iniziali, health endpoint, search endpoint, OpenAPI e validazione modelli con primo provider concreto e adapter ufficiale presenti |
 | Monitoring              | IN SVILUPPO  |         15% | Servizi base presenti; prime metriche applicative dell'Aggregation Engine disponibili nella response, ma endpoint e dashboard restano da implementare |
-| Sicurezza               | NON INIZIATO |          0% | Controlli non implementati        |
+| Sicurezza               | IN SVILUPPO  |         15% | Validazione input e rate limiting per client di `GET /search` presenti; restano i controlli trasversali |
 | Documentazione          | IN SVILUPPO  |         99% | Documenti principali verificati, variabili eBay documentate e progresso aggiornato |
 
 ---
@@ -684,7 +684,7 @@ GET /search
 * [x] Ordinamento validato
 * [x] Response model definito
 * [x] Error response definita
-* [ ] Rate limiting configurato
+* [x] Rate limiting configurato
 * [x] Documentazione OpenAPI aggiornata
 * [x] Test presente
 
@@ -945,7 +945,7 @@ Questa tabella deve collegare ogni requisito ai file reali che lo implementano.
 | REQ-020 | Test frontend                   | RUOLI_E_STANDARD.md    | Non presente         | Non presente    | NON INIZIATO |
 | REQ-021 | Prometheus                      | ARCHITETTURA.md        | `docker-compose.yml`, `docker/prometheus/prometheus.yml` | Non presente    | IN SVILUPPO  |
 | REQ-022 | Grafana                         | ARCHITETTURA.md        | `docker-compose.yml`, `docker/grafana/provisioning/datasources/prometheus.yml` | Non presente    | IN SVILUPPO  |
-| REQ-023 | Rate limiting                   | CODEX_WORKFLOW.md      | Non presente         | Non presente    | NON INIZIATO |
+| REQ-023 | Rate limiting                   | CODEX_WORKFLOW.md      | `backend/app/services/rate_limit.py`, `backend/app/api/router.py`, `backend/app/main.py`, `backend/app/core/config.py`, `.env.example`, `docker-compose.yml` | `backend/tests/test_rate_limit.py`, `backend/tests/test_search.py`, `backend/tests/test_app.py` | DA MIGLIORARE |
 | REQ-024 | Logging strutturato             | RUOLI_E_STANDARD.md    | `backend/app/network/client.py` | `backend/tests/test_network.py` | IN SVILUPPO  |
 | REQ-025 | Documentazione aggiornata       | CODEX_WORKFLOW.md      | `PROGRESS.md`, `backend/README.md`, `.env.example` | Non applicabile | IN SVILUPPO  |
 
@@ -1099,6 +1099,7 @@ Nessuna deviazione registrata.
 | ISSUE-005 | Daemon Docker locale non disponibile per `compose up` | MEDIA   | DevOps     | APERTO | Ripetere il test con Docker Desktop attivo |
 | ISSUE-006 | `pytest` backend bloccato in fase di collection nell'ambiente locale | MEDIA   | Testing    | RISOLTO | Disabilitato `cacheprovider` e stabilizzato il path dei test con `conftest.py` |
 | ISSUE-007 | Il controllo database di `/health` resta degradato senza driver `asyncpg` o servizio PostgreSQL raggiungibile | MEDIA   | API        | APERTO | Introdurre il layer PostgreSQL e completare la dipendenza runtime del driver |
+| ISSUE-008 | Due test di aggregazione dipendono da `collected_at` generato dinamicamente e falliscono in modo deterministico nell'ambiente corrente | BASSA | Testing | APERTO | Stabilizzare i timestamp delle fixture in una micro-modifica dedicata |
 
 ---
 
@@ -1107,6 +1108,7 @@ Nessuna deviazione registrata.
 | ID      | Descrizione                             | Origine | Priorità | Stato |
 | ------- | --------------------------------------- | ------- | -------- | ----- |
 | DEBT-001 | Il controllo `GET /health` usa connessioni effimere per Redis e database finche non esistono client condivisi dedicati | Endpoint `/health` | MEDIA | APERTO |
+| DEBT-002 | Il rate limiting di `GET /search` conserva le finestre in memoria per singola istanza e non condivide i contatori tra processi o repliche | Endpoint `/search` | MEDIA | APERTO |
 
 Codex deve aggiungere una voce quando introduce consapevolmente una soluzione temporanea.
 
@@ -3357,6 +3359,92 @@ COMPLETATO
 
 ```text
 Validare e implementare il rate limiting dedicato di `GET /search`.
+```
+
+---
+
+## 2026-07-28 - Rate limiting dedicato di `GET /search`
+
+### Obiettivo
+
+Limitare le richieste a `GET /search` per client con una finestra mobile configurabile, senza introdurre nuove dipendenze o coinvolgere gli altri endpoint.
+
+### Requisiti Coinvolti
+
+* REQ-014
+* REQ-019
+* REQ-023
+* REQ-025
+
+### File Analizzati
+
+* tutti i file Markdown del progetto
+* `.env.example`
+* `docker-compose.yml`
+* `backend/pyproject.toml`
+* `backend/app/main.py`
+* `backend/app/api/router.py`
+* `backend/app/core/config.py`
+* `backend/app/models/search.py`
+* `backend/app/models/__init__.py`
+* `backend/app/services/__init__.py`
+* `backend/tests/test_app.py`
+* `backend/tests/test_search.py`
+
+### File Creati
+
+* `backend/app/services/rate_limit.py`
+* `backend/tests/test_rate_limit.py`
+
+### File Modificati
+
+* `.env.example`
+* `docker-compose.yml`
+* `backend/README.md`
+* `backend/app/api/router.py`
+* `backend/app/core/config.py`
+* `backend/app/main.py`
+* `backend/app/models/__init__.py`
+* `backend/app/models/search.py`
+* `backend/app/services/__init__.py`
+* `backend/tests/test_app.py`
+* `backend/tests/test_search.py`
+* `PROGRESS.md`
+
+### File Eliminati
+
+* Nessuno
+
+### Implementazione
+
+Introdotto `SlidingWindowRateLimiter`, asincrono e protetto da lock, con contatori separati per l'indirizzo client osservato da ASGI e rimozione delle finestre scadute. Il lifecycle registra un limiter dedicato a `GET /search`, configurato tramite `BACKEND_SEARCH_RATE_LIMIT_REQUESTS` e `BACKEND_SEARCH_RATE_LIMIT_WINDOW_SECONDS`. Il router interrompe la richiesta prima dell'Aggregation Engine quando il limite e superato e restituisce un payload tipizzato `429` con header `Retry-After`. Non vengono considerati automaticamente header proxy non attendibili.
+
+### Test Eseguiti
+
+* `uvx poetry check` - superato
+* `uvx poetry run pytest tests/test_rate_limit.py tests/test_search.py tests/test_app.py -q` - superato, 12 test
+* suite backend completa - 68 test superati e 2 test di aggregazione falliti per timestamp dinamici gia estranei alla modifica
+* `uvx poetry run ruff check . --no-cache` - superato
+* `uvx poetry run ruff format --check . --no-cache` - superato
+* import e costruzione di `create_app()` - superati
+* `docker compose config` - non eseguito, comando Docker non disponibile nell'ambiente corrente
+
+### Stato Finale
+
+```text
+DA MIGLIORARE
+```
+
+### Problemi Rilevati
+
+```text
+Il limiter e locale alla singola istanza applicativa: una futura distribuzione multi-processo o multi-replica richiedera contatori condivisi, preferibilmente tramite Redis. Due test preesistenti dell'Aggregation Engine falliscono a causa di timestamp generati dinamicamente e sono registrati come ISSUE-008.
+```
+
+### Prossimo Passo
+
+```text
+Definire il primo contratto della cache Redis per le ricerche aggregate.
 ```
 
 ---

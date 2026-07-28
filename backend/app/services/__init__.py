@@ -13,6 +13,7 @@ from app.services.aggregation import (
 )
 from app.services.health import HealthService, RuntimeHealthService
 from app.services.ranking import HeuristicRankingService, RankingService
+from app.services.rate_limit import RateLimitDecision, SlidingWindowRateLimiter
 
 __all__ = [
     "AggregationError",
@@ -25,7 +26,9 @@ __all__ = [
     "HealthService",
     "HeuristicRankingService",
     "RankingService",
+    "RateLimitDecision",
     "RegistryAggregationService",
     "RuntimeHealthService",
     "SearchSortOption",
+    "SlidingWindowRateLimiter",
 ]

@@ -11,6 +11,7 @@ from app.models.search import (
     SearchErrorCode,
     SearchErrorResponse,
     SearchQueryParams,
+    SearchRateLimitErrorResponse,
     SearchResponse,
 )
 
@@ -23,5 +24,6 @@ __all__ = [
     "SearchErrorCode",
     "SearchErrorResponse",
     "SearchQueryParams",
+    "SearchRateLimitErrorResponse",
     "SearchResponse",
 ]

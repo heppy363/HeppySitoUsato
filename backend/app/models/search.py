@@ -64,6 +64,14 @@ class SearchErrorResponse(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
 
+class SearchRateLimitErrorResponse(BaseModel):
+    error_code: str = Field(default="rate_limit_exceeded", frozen=True)
+    detail: str = Field(min_length=1)
+    retry_after_seconds: int = Field(ge=1)
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+
 class SearchResponse(BaseModel):
     results: tuple[SearchResult, ...] = Field(default_factory=tuple)
     failures: tuple[AggregationProviderFailure, ...] = Field(default_factory=tuple)

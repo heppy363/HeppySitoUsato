@@ -8,12 +8,14 @@ from app.models import (
     SearchErrorCode,
     SearchErrorResponse,
     SearchQueryParams,
+    SearchRateLimitErrorResponse,
     SearchResponse,
 )
 from app.services import (
     AggregationProviderSelectionError,
     AggregationService,
     HealthService,
+    SlidingWindowRateLimiter,
 )
 
 api_router = APIRouter()
@@ -37,13 +39,31 @@ async def healthcheck(request: Request) -> JSONResponse:
 @api_router.get(
     "/search",
     response_model=SearchResponse,
-    responses={status.HTTP_400_BAD_REQUEST: {"model": SearchErrorResponse}},
+    responses={
+        status.HTTP_400_BAD_REQUEST: {"model": SearchErrorResponse},
+        status.HTTP_429_TOO_MANY_REQUESTS: {"model": SearchRateLimitErrorResponse},
+    },
     summary="Aggregated marketplace search",
 )
 async def search(
     request: Request,
     params: Annotated[SearchQueryParams, Query()],
 ) -> JSONResponse:
+    rate_limiter: SlidingWindowRateLimiter = request.app.state.search_rate_limiter
+    client_key = request.client.host if request.client is not None else "unknown"
+    rate_limit = await rate_limiter.check(client_key)
+    if not rate_limit.allowed:
+        retry_after = rate_limit.retry_after_seconds or 1
+        error_response = SearchRateLimitErrorResponse(
+            detail="Search rate limit exceeded",
+            retry_after_seconds=retry_after,
+        )
+        return JSONResponse(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            content=error_response.model_dump(mode="json"),
+            headers={"Retry-After": str(retry_after)},
+        )
+
     aggregation_service: AggregationService = request.app.state.aggregation_service
 
     try:

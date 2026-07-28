@@ -2,6 +2,7 @@ from unittest.mock import AsyncMock
 
 from fastapi.testclient import TestClient
 
+from app.core.config import Settings
 from app.main import create_app
 from app.providers import SearchRequest, SearchResult
 from app.services import (
@@ -182,6 +183,33 @@ def test_search_endpoint_returns_422_for_unknown_sort() -> None:
     assert "price_asc" in response.json()["detail"][0]["msg"]
 
 
+def test_search_endpoint_returns_429_when_client_exceeds_rate_limit(monkeypatch) -> None:
+    app = create_app(
+        Settings(
+            search_rate_limit_requests=1,
+            search_rate_limit_window_seconds=60,
+        )
+    )
+    expected_response = AggregationResponse()
+
+    with TestClient(app) as client:
+        search_mock = AsyncMock(return_value=expected_response)
+        monkeypatch.setattr(app.state.aggregation_service, "search", search_mock)
+
+        first_response = client.get("/search", params={"query": "RTX 3090"})
+        blocked_response = client.get("/search", params={"query": "RTX 3090"})
+
+    assert first_response.status_code == 200
+    assert blocked_response.status_code == 429
+    assert blocked_response.headers["Retry-After"] == "60"
+    assert blocked_response.json() == {
+        "error_code": "rate_limit_exceeded",
+        "detail": "Search rate limit exceeded",
+        "retry_after_seconds": 60,
+    }
+    assert search_mock.await_count == 1
+
+
 def test_search_endpoint_is_exposed_in_openapi_schema() -> None:
     app = create_app()
 
@@ -197,3 +225,4 @@ def test_search_endpoint_is_exposed_in_openapi_schema() -> None:
     assert sort_parameter["schema"]["default"] == SearchSortOption.RELEVANCE.value
     assert search_operation["responses"]["200"]["description"] == "Successful Response"
     assert search_operation["responses"]["400"]["description"] == "Bad Request"
+    assert search_operation["responses"]["429"]["description"] == "Too Many Requests"

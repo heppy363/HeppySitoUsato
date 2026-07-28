@@ -4,7 +4,7 @@ from app.core.config import Settings
 from app.main import create_app
 from app.network import HttpxNetworkClient
 from app.providers import EbayProvider, ProviderRegistry
-from app.services import RegistryAggregationService, RuntimeHealthService
+from app.services import RegistryAggregationService, RuntimeHealthService, SlidingWindowRateLimiter
 
 
 def test_create_app_uses_expected_metadata() -> None:
@@ -21,6 +21,7 @@ def test_create_app_registers_shared_network_client_and_ebay_provider_when_confi
         assert isinstance(app.state.network_client, HttpxNetworkClient)
         assert isinstance(app.state.providers, ProviderRegistry)
         assert isinstance(app.state.aggregation_service, RegistryAggregationService)
+        assert isinstance(app.state.search_rate_limiter, SlidingWindowRateLimiter)
         assert isinstance(app.state.health_service, RuntimeHealthService)
         assert app.state.aggregation_service.provider_registry is app.state.providers
         assert app.state.health_service.provider_registry is app.state.providers

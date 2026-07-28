@@ -7,7 +7,7 @@ from app.api.router import api_router
 from app.core.config import Settings, get_settings
 from app.network import HttpxNetworkClient
 from app.providers import ProviderRegistry, maybe_build_ebay_provider
-from app.services import RegistryAggregationService, RuntimeHealthService
+from app.services import RegistryAggregationService, RuntimeHealthService, SlidingWindowRateLimiter
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -20,6 +20,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         provider_registry = ProviderRegistry()
         app.state.providers = provider_registry
         app.state.aggregation_service = RegistryAggregationService(provider_registry)
+        app.state.search_rate_limiter = SlidingWindowRateLimiter(
+            limit=app_settings.search_rate_limit_requests,
+            window_seconds=app_settings.search_rate_limit_window_seconds,
+        )
         app.state.health_service = RuntimeHealthService(
             settings=app_settings,
             network_client=network_client,

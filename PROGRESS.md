@@ -107,13 +107,13 @@ IN SVILUPPO
 ## Fase Corrente
 
 ```text
-Primo contratto della cache Redis
+Implementazione della cache Redis
 ```
 
 ## Percentuale Indicativa
 
 ```text
-77%
+78%
 ```
 
 La percentuale è indicativa e non deve essere calcolata esclusivamente sul numero di file creati.
@@ -125,13 +125,13 @@ Deve riflettere il completamento reale delle macro aree previste nella roadmap.
 ```text
 Data: 2026-07-28
 Responsabile: Codex
-Attivita: Definizione del contratto asincrono `SearchCache`, della chiave deterministica versionata e del TTL configurabile
+Attivita: Implementazione di `RedisSearchCache` con serializzazione tipizzata, TTL esplicito e gestione fail-open
 ```
 
 ## Prossimo Passo Approvato
 
 ```text
-Implementare `RedisSearchCache` sopra il contratto esistente con serializzazione tipizzata e gestione fail-open degli errori Redis.
+Integrare `RedisSearchCache` nel lifecycle applicativo e nell'Aggregation Engine con lettura prima dei provider e scrittura dopo l'aggregazione.
 ```
 
 Codex non deve iniziare automaticamente attività successive oltre il prossimo passo approvato.
@@ -147,7 +147,7 @@ Codex non deve iniziare automaticamente attività successive oltre il prossimo p
 | Network Layer           | IN SVILUPPO  |         79% | Client condiviso, configurazione proxy astratta, lifecycle con chiusura verificata e test mockati presenti; restano da definire i contratti marketplace |
 | Marketplace Provider    | IN SVILUPPO  |         72% | Contratto comune, `ProviderRegistry` runtime, `EbayProvider` con factory runtime, adapter mockato, adapter Browse API ufficiale e test presenti; verifica live ancora assente |
 | Aggregation Engine      | IN SVILUPPO  |         83% | Contratto registry-backed presente con selezione provider, `asyncio.gather`, isolamento dei fallimenti, raccolta di risultati parziali, deduplicazione per `(platform, external_id)`, primo merge conservativo, ranking euristico iniziale, primi filtri prezzo, ordinamento finale deterministico, primo ordinamento configurabile (`relevance`, `price_asc`) e prime metriche applicative della risposta aggregata |
-| Cache Redis             | IN SVILUPPO  |         18% | Contratto asincrono, errori dedicati, chiavi deterministiche versionate e TTL configurabile presenti; implementazione Redis e wiring assenti |
+| Cache Redis             | IN SVILUPPO  |         48% | Contratto e implementazione Redis presenti con chiavi versionate, serializzazione tipizzata, TTL e fail-open; wiring applicativo e metriche assenti |
 | PostgreSQL e Migrazioni | NON INIZIATO |          0% | Solo servizio Docker, ORM e Alembic assenti |
 | Worker e Code           | NON INIZIATO |          0% | Solo placeholder Docker, tecnologia non selezionata |
 | API FastAPI             | IN SVILUPPO  |         62% | Endpoint `GET /health` presente; `GET /search` disponibile con query model, filtri prezzo, piattaforme, parametro `sort`, rate limiting dedicato in-memory, error response tipizzate e OpenAPI verificata |
@@ -572,7 +572,7 @@ I test coprono punteggi nel range [0, 1], titolo esatto sopra titolo parziale, r
 
 # 12. Cache Redis
 
-**Stato:** `NON INIZIATO`
+**Stato:** `IN SVILUPPO`
 
 ## Requisiti
 
@@ -580,14 +580,14 @@ I test coprono punteggi nel range [0, 1], titolo esatto sopra titolo parziale, r
 * [x] Definire cache service
 * [x] Normalizzare chiavi
 * [x] Includere query e filtri nella chiave
-* [ ] Impostare TTL
-* [ ] Gestire cache hit
-* [ ] Gestire cache miss
-* [ ] Gestire Redis non disponibile
-* [ ] Evitare blocco dell'intera ricerca
-* [ ] Serializzare modelli normalizzati
+* [x] Impostare TTL
+* [x] Gestire cache hit
+* [x] Gestire cache miss
+* [x] Gestire Redis non disponibile
+* [x] Evitare blocco dell'intera ricerca
+* [x] Serializzare modelli normalizzati
 * [ ] Aggiungere metriche cache
-* [ ] Aggiungere test
+* [x] Aggiungere test
 
 ## Configurazione Iniziale
 
@@ -1358,6 +1358,30 @@ Risultato: SUPERATO
 Test superati: validazione metadata Poetry
 Test falliti: Nessuno
 Note: nessuna dipendenza aggiunta.
+
+Data: 2026-07-28
+Comando: uvx poetry run pytest tests/test_cache.py tests/test_rate_limit.py tests/test_search.py tests/test_app.py -q
+Ambiente: locale, directory `backend/`, Python 3.14 gestito dal virtualenv Poetry
+Risultato: SUPERATO
+Test superati: 19
+Test falliti: Nessuno
+Note: verificati round-trip tipizzato, TTL Redis, cache miss, payload corrotto, fail-open e regressioni API.
+
+Data: 2026-07-28
+Comando: uvx poetry run ruff check . --no-cache
+Ambiente: locale, directory `backend/`
+Risultato: SUPERATO
+Test superati: lint backend dopo `RedisSearchCache`
+Test falliti: Nessuno
+Note: nessun errore rilevato.
+
+Data: 2026-07-28
+Comando: uvx poetry run ruff format --check . --no-cache
+Ambiente: locale, directory `backend/`
+Risultato: SUPERATO
+Test superati: formattazione backend
+Test falliti: Nessuno
+Note: 47 file gia formattati.
 ```
 
 ---
@@ -1368,6 +1392,7 @@ Questa sezione deve contenere soltanto comandi realmente eseguiti con successo.
 
 | Comando                  | Stato | Data       | Note |
 | ------------------------ | ----- | ---------- | ---- |
+| `uvx poetry run pytest tests/test_cache.py tests/test_rate_limit.py tests/test_search.py tests/test_app.py -q` | OK | 2026-07-28 | 19 test superati dopo `RedisSearchCache` |
 | `uvx poetry run pytest tests/test_cache.py tests/test_rate_limit.py tests/test_search.py tests/test_app.py -q` | OK | 2026-07-28 | 15 test mirati superati per cache contract e regressioni API |
 | `uvx poetry run ruff check . --no-cache` | OK | 2026-07-28 | Lint backend superato dopo `SearchCache` |
 | `uvx poetry run ruff format --check . --no-cache` | OK | 2026-07-28 | Formattazione backend verificata |
@@ -3555,6 +3580,76 @@ Il contratto non e ancora collegato a Redis o all'Aggregation Engine; cache hit,
 
 ```text
 Implementare `RedisSearchCache` sopra il contratto esistente con serializzazione tipizzata e gestione fail-open degli errori Redis.
+```
+
+---
+
+## 2026-07-28 - Implementazione di RedisSearchCache
+
+### Obiettivo
+
+Implementare la cache Redis concreta sopra il contratto `SearchCache`, con serializzazione tipizzata, TTL esplicito e comportamento fail-open, senza collegarla ancora al flusso di aggregazione.
+
+### Requisiti Coinvolti
+
+* REQ-010
+* REQ-019
+* REQ-025
+
+### File Analizzati
+
+* tutti i file Markdown del progetto
+* `backend/pyproject.toml`
+* `backend/app/services/cache.py`
+* `backend/app/services/__init__.py`
+* `backend/app/services/aggregation.py`
+* `backend/app/services/health.py`
+* `backend/tests/test_cache.py`
+
+### File Creati
+
+* Nessuno
+
+### File Modificati
+
+* `backend/app/services/cache.py`
+* `backend/app/services/__init__.py`
+* `backend/tests/test_cache.py`
+* `backend/README.md`
+* `PROGRESS.md`
+
+### File Eliminati
+
+* Nessuno
+
+### Implementazione
+
+Introdotto `RedisSearchCache`, costruibile da un client Redis iniettato o tramite URL. Le risposte vengono salvate con `AggregationResponse.model_dump_json()` e ricostruite con `model_validate_json()`. `set` usa sempre un TTL positivo tramite l'opzione Redis `ex`. Errori di connessione, scrittura, lettura o chiusura degradano senza propagarsi; payload mancanti o non validi diventano cache miss. I fallimenti producono warning strutturati con operazione, chiave derivata e tipo di errore, senza includere payload o credenziali.
+
+### Test Eseguiti
+
+* `uvx poetry run pytest tests/test_cache.py tests/test_rate_limit.py tests/test_search.py tests/test_app.py -q` - superato, 19 test
+* `uvx poetry run ruff check . --no-cache` - superato
+* `uvx poetry run ruff format --check . --no-cache` - superato
+* `uvx poetry check` - superato
+* import di `RedisSearchCache` - superato
+
+### Stato Finale
+
+```text
+COMPLETATO
+```
+
+### Problemi Rilevati
+
+```text
+L'implementazione e verificata con un client Redis simulato; non e ancora registrata nel lifecycle e non viene ancora consultata dall'Aggregation Engine.
+```
+
+### Prossimo Passo
+
+```text
+Integrare `RedisSearchCache` nel lifecycle applicativo e nell'Aggregation Engine con lettura prima dei provider e scrittura dopo l'aggregazione.
 ```
 
 ---

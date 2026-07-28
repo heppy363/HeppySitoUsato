@@ -12,6 +12,7 @@ from app.services.aggregation import (
     SearchSortOption,
 )
 from app.services.cache import (
+    RedisSearchCache,
     SearchCache,
     SearchCacheError,
     SearchCacheKeyBuilder,
@@ -35,6 +36,7 @@ __all__ = [
     "RankingService",
     "RateLimitDecision",
     "RegistryAggregationService",
+    "RedisSearchCache",
     "RuntimeHealthService",
     "SearchCache",
     "SearchCacheError",

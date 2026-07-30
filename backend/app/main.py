@@ -5,6 +5,7 @@ from fastapi import FastAPI
 
 from app.api.router import api_router
 from app.core.config import Settings, get_settings
+from app.database import DatabaseSessionManager
 from app.network import HttpxNetworkClient
 from app.providers import ProviderRegistry, maybe_build_ebay_provider
 from app.services import (
@@ -29,6 +30,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.registry_aggregation_service = registry_aggregation_service
         search_cache = RedisSearchCache.from_url(app_settings.redis_url)
         app.state.search_cache = search_cache
+        database = DatabaseSessionManager(app_settings.build_database_settings())
+        app.state.database = database
         app.state.aggregation_service = CachedAggregationService(
             registry_aggregation_service,
             search_cache,
@@ -43,6 +46,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             network_client=network_client,
             provider_registry=provider_registry,
             aggregation_service=app.state.aggregation_service,
+            database=database,
         )
         app.state.ebay_provider = maybe_build_ebay_provider(
             settings=app_settings,
@@ -57,7 +61,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             try:
                 await search_cache.aclose()
             finally:
-                await network_client.aclose()
+                try:
+                    await database.dispose()
+                finally:
+                    await network_client.aclose()
 
     app = FastAPI(
         title=app_settings.app_name,

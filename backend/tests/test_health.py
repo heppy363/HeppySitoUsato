@@ -1,11 +1,11 @@
 from datetime import UTC, datetime
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
 
-import app.services.health as health_module
 from app.core.config import Settings
+from app.database import DatabaseSessionManager
 from app.main import create_app
 from app.models.health import (
     DependencyHealth,
@@ -33,30 +33,6 @@ class FakeRedisClient:
         self.closed = True
 
 
-class FakeAsyncConnection:
-    async def execute(self, _statement: object) -> object:
-        return object()
-
-
-class FakeAsyncConnectionContext:
-    async def __aenter__(self) -> FakeAsyncConnection:
-        return FakeAsyncConnection()
-
-    async def __aexit__(self, _exc_type: object, _exc: object, _tb: object) -> None:
-        return None
-
-
-class FakeAsyncEngine:
-    def __init__(self) -> None:
-        self.disposed = False
-
-    def connect(self) -> FakeAsyncConnectionContext:
-        return FakeAsyncConnectionContext()
-
-    async def dispose(self) -> None:
-        self.disposed = True
-
-
 def build_health_response(status: HealthResponseStatus) -> HealthResponse:
     return HealthResponse(
         status=status,
@@ -79,19 +55,26 @@ def build_health_response(status: HealthResponseStatus) -> HealthResponse:
     )
 
 
-def build_runtime_health_service() -> tuple[RuntimeHealthService, HttpxNetworkClient]:
+def build_runtime_health_service() -> tuple[
+    RuntimeHealthService,
+    HttpxNetworkClient,
+    DatabaseSessionManager,
+]:
     settings = Settings()
     network_client = HttpxNetworkClient(settings.build_network_settings())
     provider_registry = ProviderRegistry()
     aggregation_service = RegistryAggregationService(provider_registry)
+    database = MagicMock(spec=DatabaseSessionManager)
+    database.check_connection = AsyncMock()
     service = RuntimeHealthService(
         settings=settings,
         network_client=network_client,
         provider_registry=provider_registry,
         aggregation_service=aggregation_service,
+        database=database,
         check_timeout_seconds=0.1,
     )
-    return service, network_client
+    return service, network_client, database
 
 
 def test_health_endpoint_returns_200_when_all_checks_are_up(
@@ -147,11 +130,12 @@ def test_health_endpoint_returns_503_when_a_dependency_is_down(
 async def test_runtime_health_service_reports_all_checks_up(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    service, network_client = build_runtime_health_service()
+    service, network_client, database = build_runtime_health_service()
     fake_redis = FakeRedisClient()
-    fake_engine = FakeAsyncEngine()
-    monkeypatch.setattr(health_module, "redis_from_url", lambda *_args, **_kwargs: fake_redis)
-    monkeypatch.setattr(health_module, "create_async_engine", lambda *_args, **_kwargs: fake_engine)
+    monkeypatch.setattr(
+        "app.services.health.redis_from_url",
+        lambda *_args, **_kwargs: fake_redis,
+    )
 
     try:
         response = await service.get_health()
@@ -164,18 +148,19 @@ async def test_runtime_health_service_reports_all_checks_up(
     assert response.checks.redis.status == HealthCheckStatus.UP
     assert response.checks.database.status == HealthCheckStatus.UP
     assert fake_redis.closed is True
-    assert fake_engine.disposed is True
+    database.check_connection.assert_awaited_once_with()
 
 
 @pytest.mark.asyncio
 async def test_runtime_health_service_reports_backend_down_when_network_client_is_closed(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    service, network_client = build_runtime_health_service()
+    service, network_client, _database = build_runtime_health_service()
     fake_redis = FakeRedisClient()
-    fake_engine = FakeAsyncEngine()
-    monkeypatch.setattr(health_module, "redis_from_url", lambda *_args, **_kwargs: fake_redis)
-    monkeypatch.setattr(health_module, "create_async_engine", lambda *_args, **_kwargs: fake_engine)
+    monkeypatch.setattr(
+        "app.services.health.redis_from_url",
+        lambda *_args, **_kwargs: fake_redis,
+    )
 
     await network_client.aclose()
     response = await service.get_health()
@@ -189,17 +174,16 @@ async def test_runtime_health_service_reports_backend_down_when_network_client_i
 
 
 @pytest.mark.asyncio
-async def test_runtime_health_service_reports_database_driver_missing(
+async def test_runtime_health_service_reports_database_connection_error(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    service, network_client = build_runtime_health_service()
+    service, network_client, database = build_runtime_health_service()
     fake_redis = FakeRedisClient()
-    monkeypatch.setattr(health_module, "redis_from_url", lambda *_args, **_kwargs: fake_redis)
-
-    def raise_driver_error(*_args: object, **_kwargs: object) -> object:
-        raise ModuleNotFoundError("No module named 'asyncpg'")
-
-    monkeypatch.setattr(health_module, "create_async_engine", raise_driver_error)
+    monkeypatch.setattr(
+        "app.services.health.redis_from_url",
+        lambda *_args, **_kwargs: fake_redis,
+    )
+    database.check_connection.side_effect = OSError("database unavailable")
 
     try:
         response = await service.get_health()
@@ -209,5 +193,5 @@ async def test_runtime_health_service_reports_database_driver_missing(
     assert response.is_healthy is False
     assert response.checks.database == DependencyHealth(
         status=HealthCheckStatus.DOWN,
-        detail="driver_not_installed",
+        detail="connection_error",
     )

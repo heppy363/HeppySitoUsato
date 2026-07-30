@@ -107,13 +107,13 @@ IN SVILUPPO
 ## Fase Corrente
 
 ```text
-Implementazione della cache Redis
+Implementazione di PostgreSQL e migrazioni
 ```
 
 ## Percentuale Indicativa
 
 ```text
-79%
+81%
 ```
 
 La percentuale è indicativa e non deve essere calcolata esclusivamente sul numero di file creati.
@@ -123,15 +123,15 @@ Deve riflettere il completamento reale delle macro aree previste nella roadmap.
 ## Ultimo Aggiornamento
 
 ```text
-Data: 2026-07-29
+Data: 2026-07-30
 Responsabile: Codex
-Attivita: Aggiunta delle metriche cache per hit, miss ed errori nel flusso di aggregazione
+Attivita: Configurazione SQLAlchemy asincrona e contratto iniziale delle sessioni database
 ```
 
 ## Prossimo Passo Approvato
 
 ```text
-Definire la configurazione SQLAlchemy asincrona e il contratto iniziale delle sessioni database.
+Configurare Alembic asincrono sopra il metadata SQLAlchemy iniziale, senza creare tabelle applicative premature.
 ```
 
 Codex non deve iniziare automaticamente attività successive oltre il prossimo passo approvato.
@@ -148,7 +148,7 @@ Codex non deve iniziare automaticamente attività successive oltre il prossimo p
 | Marketplace Provider    | IN SVILUPPO  |         72% | Contratto comune, `ProviderRegistry` runtime, `EbayProvider` con factory runtime, adapter mockato, adapter Browse API ufficiale e test presenti; verifica live ancora assente |
 | Aggregation Engine      | IN SVILUPPO  |         83% | Contratto registry-backed presente con selezione provider, `asyncio.gather`, isolamento dei fallimenti, raccolta di risultati parziali, deduplicazione per `(platform, external_id)`, primo merge conservativo, ranking euristico iniziale, primi filtri prezzo, ordinamento finale deterministico, primo ordinamento configurabile (`relevance`, `price_asc`) e prime metriche applicative della risposta aggregata |
 | Cache Redis             | IN SVILUPPO  |         88% | Cache Redis condivisa integrata nel lifecycle e nell'aggregazione con hit, miss, TTL, fail-open e metriche applicative per hit, miss ed errori |
-| PostgreSQL e Migrazioni | NON INIZIATO |          0% | Solo servizio Docker, ORM e Alembic assenti |
+| PostgreSQL e Migrazioni | IN SVILUPPO  |         35% | SQLAlchemy asincrono, asyncpg, engine e session factory condivisi presenti; Alembic e verifica live restano da completare |
 | Worker e Code           | NON INIZIATO |          0% | Solo placeholder Docker, tecnologia non selezionata |
 | API FastAPI             | IN SVILUPPO  |         62% | Endpoint `GET /health` presente; `GET /search` disponibile con query model, filtri prezzo, piattaforme, parametro `sort`, rate limiting dedicato in-memory, error response tipizzate e OpenAPI verificata |
 | Streaming Risultati     | NON INIZIATO |          0% | SSE o WebSocket non definiti      |
@@ -156,7 +156,7 @@ Codex non deve iniziare automaticamente attività successive oltre il prossimo p
 | State Management        | IN SVILUPPO  |         15% | Pinia configurato con store iniziale |
 | Server State            | IN SVILUPPO  |         15% | TanStack Query configurato con query client base |
 | Interfaccia Grafica     | IN SVILUPPO  |         10% | Shell UI iniziale presente, feature di ricerca assenti |
-| Testing                 | IN SVILUPPO  |         86% | Test backend, network layer, lifecycle applicativo, `ProviderRegistry`, aggregazione parallela con errore parziale, deduplicazione, merge iniziale, ranking euristico, filtri prezzo, ordinamento finale, primo ordinamento configurabile, metriche iniziali, health endpoint, search endpoint, OpenAPI e validazione modelli con primo provider concreto e adapter ufficiale presenti |
+| Testing                 | IN SVILUPPO  |         87% | Test backend, network layer, lifecycle applicativo, sessioni database, `ProviderRegistry`, aggregazione parallela con errore parziale, deduplicazione, merge iniziale, ranking euristico, filtri prezzo, ordinamento finale, primo ordinamento configurabile, metriche iniziali, health endpoint, search endpoint, OpenAPI e validazione modelli con primo provider concreto e adapter ufficiale presenti |
 | Monitoring              | IN SVILUPPO  |         15% | Servizi base presenti; prime metriche applicative dell'Aggregation Engine disponibili nella response, ma endpoint e dashboard restano da implementare |
 | Sicurezza               | IN SVILUPPO  |         15% | Validazione input e rate limiting per client di `GET /search` presenti; restano i controlli trasversali |
 | Documentazione          | IN SVILUPPO  |         99% | Documenti principali verificati, variabili eBay documentate e progresso aggiornato |
@@ -599,17 +599,17 @@ TTL previsto: 300 secondi
 
 # 13. PostgreSQL e Alembic
 
-**Stato:** `NON INIZIATO`
+**Stato:** `IN SVILUPPO`
 
 ## Requisiti
 
 * [ ] Configurare PostgreSQL 16
-* [ ] Configurare SQLAlchemy 2.x
-* [ ] Configurare sessioni asincrone
+* [x] Configurare SQLAlchemy 2.x
+* [x] Configurare sessioni asincrone
 * [ ] Configurare Alembic
 * [ ] Definire prima migrazione
-* [ ] Configurare healthcheck
-* [ ] Gestire connessioni
+* [x] Configurare healthcheck
+* [x] Gestire connessioni
 * [ ] Aggiungere test di integrazione
 
 ## Modelli Futuri
@@ -1098,7 +1098,7 @@ Nessuna deviazione registrata.
 | ISSUE-004 | Strategia proxy di produzione non definita       | MEDIA   | Network    | APERTO | Definire `ProxyProvider` e integrarlo nel client condiviso |
 | ISSUE-005 | Daemon Docker locale non disponibile per `compose up` | MEDIA   | DevOps     | APERTO | Ripetere il test con Docker Desktop attivo |
 | ISSUE-006 | `pytest` backend bloccato in fase di collection nell'ambiente locale | MEDIA   | Testing    | RISOLTO | Disabilitato `cacheprovider` e stabilizzato il path dei test con `conftest.py` |
-| ISSUE-007 | Il controllo database di `/health` resta degradato senza driver `asyncpg` o servizio PostgreSQL raggiungibile | MEDIA   | API        | APERTO | Introdurre il layer PostgreSQL e completare la dipendenza runtime del driver |
+| ISSUE-007 | La connessione database e verificata tramite mock, ma non ancora contro un servizio PostgreSQL 16 live | MEDIA   | Database   | APERTO | Eseguire i test di integrazione quando Docker/PostgreSQL saranno disponibili |
 | ISSUE-008 | Due test di aggregazione dipendono da `collected_at` generato dinamicamente e falliscono in modo deterministico nell'ambiente corrente | BASSA | Testing | APERTO | Stabilizzare i timestamp delle fixture in una micro-modifica dedicata |
 
 ---
@@ -1107,7 +1107,7 @@ Nessuna deviazione registrata.
 
 | ID      | Descrizione                             | Origine | Priorità | Stato |
 | ------- | --------------------------------------- | ------- | -------- | ----- |
-| DEBT-001 | Il controllo `GET /health` usa connessioni effimere per Redis e database finche non esistono client condivisi dedicati | Endpoint `/health` | MEDIA | APERTO |
+| DEBT-001 | Il controllo `GET /health` usa ancora una connessione Redis effimera; il database ora riusa l'engine condiviso | Endpoint `/health` | MEDIA | APERTO |
 | DEBT-002 | Il rate limiting di `GET /search` conserva le finestre in memoria per singola istanza e non condivide i contatori tra processi o repliche | Endpoint `/search` | MEDIA | APERTO |
 
 Codex deve aggiungere una voce quando introduce consapevolmente una soluzione temporanea.
@@ -3820,6 +3820,87 @@ Le metriche sono applicative e per singola risposta; non sono ancora contatori P
 
 ```text
 Definire la configurazione SQLAlchemy asincrona e il contratto iniziale delle sessioni database.
+```
+
+---
+
+## 2026-07-30 - Configurazione SQLAlchemy asincrona e sessioni database
+
+### Obiettivo
+
+Definire la configurazione SQLAlchemy asincrona e il primo contratto condiviso per le sessioni database.
+
+### Requisiti Coinvolti
+
+* PostgreSQL e Alembic - Configurare SQLAlchemy 2.x
+* PostgreSQL e Alembic - Configurare sessioni asincrone
+* PostgreSQL e Alembic - Gestire connessioni
+* API FastAPI - Stato database verificato
+
+### File Analizzati
+
+* `backend/pyproject.toml`
+* `backend/app/core/config.py`
+* `backend/app/main.py`
+* `backend/app/services/health.py`
+* `backend/tests/test_app.py`
+* `backend/tests/test_health.py`
+* `.env.example`
+
+### File Creati
+
+* `backend/app/database/__init__.py`
+* `backend/app/database/config.py`
+* `backend/app/database/session.py`
+* `backend/tests/test_database.py`
+
+### File Modificati
+
+* `backend/pyproject.toml`
+* `backend/poetry.lock`
+* `backend/app/core/config.py`
+* `backend/app/main.py`
+* `backend/app/services/health.py`
+* `backend/tests/test_app.py`
+* `backend/tests/test_health.py`
+* `backend/README.md`
+* `.env.example`
+* `PROGRESS.md`
+
+### File Eliminati
+
+* Nessuno
+
+### Implementazione
+
+Aggiunti `asyncpg 0.31`, configurazione database tipizzata, engine SQLAlchemy asincrono condiviso, factory `async_sessionmaker` e context manager che chiude sempre la sessione ed esegue rollback in caso di errore. Il lifespan FastAPI espone il manager in `app.state` e ne rilascia l'engine allo shutdown. Il controllo database di `/health` riusa ora lo stesso engine invece di crearne uno effimero a ogni richiesta.
+
+### Test Eseguiti
+
+* `uvx poetry lock` - superato
+* `uvx poetry install --no-interaction` - superato con `asyncpg 0.31.0`
+* `uvx poetry run pytest tests/test_database.py tests/test_health.py tests/test_app.py -q` - superato, 12 test
+* `uvx poetry check` - superato
+* `uvx poetry run pytest -q` - 83 test superati e 2 test preesistenti di aggregazione non superati per timestamp/ordinamento dinamici
+* `uvx poetry run ruff check . --no-cache` - superato
+* `uvx poetry run ruff format --check . --no-cache` - ha richiesto la formattazione di 4 file coinvolti
+
+### Stato Finale
+
+```text
+DA VERIFICARE
+```
+
+### Problemi Rilevati
+
+```text
+La connessione a PostgreSQL 16 non e stata verificata live. La suite completa conserva due fallimenti preesistenti nei test di aggregazione sensibili a timestamp e ordine dinamici. Il primo tentativo con asyncpg 0.30 non era compatibile con Python 3.14 locale; asyncpg 0.31.0 e stato installato correttamente.
+```
+
+### Prossimo Passo
+
+```text
+Configurare Alembic asincrono sopra il metadata SQLAlchemy iniziale, senza creare tabelle applicative premature.
 ```
 
 ---

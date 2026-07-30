@@ -3,11 +3,10 @@ from abc import ABC, abstractmethod
 
 from redis.asyncio import from_url as redis_from_url
 from redis.exceptions import RedisError
-from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.core.config import Settings
+from app.database import DatabaseSessionManager
 from app.models.health import (
     DependencyHealth,
     HealthChecks,
@@ -33,12 +32,14 @@ class RuntimeHealthService(HealthService):
         network_client: HttpxNetworkClient,
         provider_registry: ProviderRegistry,
         aggregation_service: AggregationService,
+        database: DatabaseSessionManager,
         check_timeout_seconds: float = 1.0,
     ) -> None:
         self.settings = settings
         self.network_client = network_client
         self.provider_registry = provider_registry
         self.aggregation_service = aggregation_service
+        self.database = database
         self.check_timeout_seconds = check_timeout_seconds
 
     async def get_health(self) -> HealthResponse:
@@ -102,36 +103,13 @@ class RuntimeHealthService(HealthService):
 
     async def _check_database(self) -> DependencyHealth:
         try:
-            engine = create_async_engine(self.settings.database_url)
-        except ModuleNotFoundError:
-            return DependencyHealth(
-                status=HealthCheckStatus.DOWN,
-                detail="driver_not_installed",
-            )
-        except (SQLAlchemyError, ValueError):
-            return DependencyHealth(
-                status=HealthCheckStatus.DOWN,
-                detail="configuration_error",
-            )
-        except Exception:
-            return DependencyHealth(status=HealthCheckStatus.DOWN, detail="unexpected_error")
-
-        try:
             async with asyncio.timeout(self.check_timeout_seconds):
-                async with engine.connect() as connection:
-                    await connection.execute(text("SELECT 1"))
+                await self.database.check_connection()
         except TimeoutError:
             return DependencyHealth(status=HealthCheckStatus.DOWN, detail="timeout")
-        except ModuleNotFoundError:
-            return DependencyHealth(
-                status=HealthCheckStatus.DOWN,
-                detail="driver_not_installed",
-            )
         except (SQLAlchemyError, OSError):
             return DependencyHealth(status=HealthCheckStatus.DOWN, detail="connection_error")
         except Exception:
             return DependencyHealth(status=HealthCheckStatus.DOWN, detail="unexpected_error")
-        finally:
-            await engine.dispose()
 
         return DependencyHealth(status=HealthCheckStatus.UP)

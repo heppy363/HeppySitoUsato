@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.database import DatabaseSettings
 from app.network.config import (
     ConnectionLimitsSettings,
     NetworkSettings,
@@ -27,6 +28,8 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
     search_cache_ttl_seconds: int = Field(default=300, ge=1)
     database_url: str = "postgresql+asyncpg://heppysito:change_me@localhost:5432/heppysitousato"
+    database_echo: bool = False
+    database_pool_pre_ping: bool = True
     search_rate_limit_requests: int = Field(default=30, ge=1)
     search_rate_limit_window_seconds: float = Field(default=60.0, gt=0)
     network_http2: bool = True
@@ -87,6 +90,13 @@ class Settings(BaseSettings):
                 backoff_seconds=self.network_retry_backoff_seconds,
                 jitter_seconds=self.network_retry_jitter_seconds,
             ),
+        )
+
+    def build_database_settings(self) -> DatabaseSettings:
+        return DatabaseSettings(
+            url=self.database_url,
+            echo=self.database_echo,
+            pool_pre_ping=self.database_pool_pre_ping,
         )
 
     def build_ebay_browse_api_settings(self) -> "EbayBrowseApiSettings":

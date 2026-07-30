@@ -198,7 +198,9 @@ async def test_cached_aggregation_service_returns_cache_hit_without_calling_prov
 
     response = await service.search(aggregation_request)
 
-    assert response == aggregation_response
+    assert response.metrics.cache_hit_count == 1
+    assert response.metrics.cache_miss_count == 0
+    assert response.metrics.cache_error_count == 0
     search_cache.get.assert_awaited_once_with(aggregation_request)
     base_service.search.assert_not_awaited()
     search_cache.set.assert_not_awaited()
@@ -217,7 +219,9 @@ async def test_cached_aggregation_service_caches_aggregation_miss_with_configure
 
     response = await service.search(aggregation_request)
 
-    assert response == aggregation_response
+    assert response.metrics.cache_hit_count == 0
+    assert response.metrics.cache_miss_count == 1
+    assert response.metrics.cache_error_count == 0
     base_service.search.assert_awaited_once_with(aggregation_request)
     search_cache.set.assert_awaited_once_with(
         aggregation_request,
@@ -240,5 +244,26 @@ async def test_cached_aggregation_service_fails_open_for_cache_contract_errors(
 
     response = await service.search(aggregation_request)
 
-    assert response == aggregation_response
+    assert response.metrics.cache_hit_count == 0
+    assert response.metrics.cache_miss_count == 0
+    assert response.metrics.cache_error_count == 2
     base_service.search.assert_awaited_once_with(aggregation_request)
+
+
+@pytest.mark.asyncio
+async def test_cached_aggregation_service_counts_miss_and_cache_write_error(
+    aggregation_request: AggregationRequest,
+    aggregation_response: AggregationResponse,
+) -> None:
+    base_service = RegistryAggregationService(ProviderRegistry())
+    base_service.search = AsyncMock(return_value=aggregation_response)
+    search_cache = AsyncMock(spec=SearchCache)
+    search_cache.get.return_value = None
+    search_cache.set.side_effect = SearchCacheUnavailableError("unavailable")
+    service = CachedAggregationService(base_service, search_cache, ttl_seconds=300)
+
+    response = await service.search(aggregation_request)
+
+    assert response.metrics.cache_hit_count == 0
+    assert response.metrics.cache_miss_count == 1
+    assert response.metrics.cache_error_count == 1

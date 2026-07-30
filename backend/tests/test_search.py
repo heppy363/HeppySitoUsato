@@ -107,6 +107,9 @@ def test_search_endpoint_returns_200_with_aggregated_results(
             "normalized_result_count": 1,
             "filtered_result_count": 1,
             "final_result_count": 1,
+            "cache_hit_count": 0,
+            "cache_miss_count": 0,
+            "cache_error_count": 0,
             "duration_ms": 12.5,
         },
     }

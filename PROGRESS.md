@@ -123,15 +123,15 @@ Deve riflettere il completamento reale delle macro aree previste nella roadmap.
 ## Ultimo Aggiornamento
 
 ```text
-Data: 2026-07-28
+Data: 2026-07-29
 Responsabile: Codex
-Attivita: Integrazione di `RedisSearchCache` nel lifecycle e nell'Aggregation Engine tramite `CachedAggregationService`
+Attivita: Aggiunta delle metriche cache per hit, miss ed errori nel flusso di aggregazione
 ```
 
 ## Prossimo Passo Approvato
 
 ```text
-Aggiungere le prime metriche cache per hit, miss ed errori nel flusso di aggregazione.
+Definire la configurazione SQLAlchemy asincrona e il contratto iniziale delle sessioni database.
 ```
 
 Codex non deve iniziare automaticamente attività successive oltre il prossimo passo approvato.
@@ -147,7 +147,7 @@ Codex non deve iniziare automaticamente attività successive oltre il prossimo p
 | Network Layer           | IN SVILUPPO  |         79% | Client condiviso, configurazione proxy astratta, lifecycle con chiusura verificata e test mockati presenti; restano da definire i contratti marketplace |
 | Marketplace Provider    | IN SVILUPPO  |         72% | Contratto comune, `ProviderRegistry` runtime, `EbayProvider` con factory runtime, adapter mockato, adapter Browse API ufficiale e test presenti; verifica live ancora assente |
 | Aggregation Engine      | IN SVILUPPO  |         83% | Contratto registry-backed presente con selezione provider, `asyncio.gather`, isolamento dei fallimenti, raccolta di risultati parziali, deduplicazione per `(platform, external_id)`, primo merge conservativo, ranking euristico iniziale, primi filtri prezzo, ordinamento finale deterministico, primo ordinamento configurabile (`relevance`, `price_asc`) e prime metriche applicative della risposta aggregata |
-| Cache Redis             | IN SVILUPPO  |         78% | Cache Redis condivisa integrata nel lifecycle e nell'aggregazione con hit, miss, TTL e fail-open; metriche cache ancora assenti |
+| Cache Redis             | IN SVILUPPO  |         88% | Cache Redis condivisa integrata nel lifecycle e nell'aggregazione con hit, miss, TTL, fail-open e metriche applicative per hit, miss ed errori |
 | PostgreSQL e Migrazioni | NON INIZIATO |          0% | Solo servizio Docker, ORM e Alembic assenti |
 | Worker e Code           | NON INIZIATO |          0% | Solo placeholder Docker, tecnologia non selezionata |
 | API FastAPI             | IN SVILUPPO  |         62% | Endpoint `GET /health` presente; `GET /search` disponibile con query model, filtri prezzo, piattaforme, parametro `sort`, rate limiting dedicato in-memory, error response tipizzate e OpenAPI verificata |
@@ -586,7 +586,7 @@ I test coprono punteggi nel range [0, 1], titolo esatto sopra titolo parziale, r
 * [x] Gestire Redis non disponibile
 * [x] Evitare blocco dell'intera ricerca
 * [x] Serializzare modelli normalizzati
-* [ ] Aggiungere metriche cache
+* [x] Aggiungere metriche cache
 * [x] Aggiungere test
 
 ## Configurazione Iniziale
@@ -3750,6 +3750,76 @@ Il wiring e verificato con client Redis simulati e senza un servizio Redis live.
 
 ```text
 Aggiungere le prime metriche cache per hit, miss ed errori nel flusso di aggregazione.
+```
+
+---
+
+## 2026-07-29 - Metriche cache nel flusso di aggregazione
+
+### Obiettivo
+
+Aggiungere le prime metriche applicative per cache hit, cache miss ed errori cache alla risposta aggregata.
+
+### Requisiti Coinvolti
+
+* Cache Redis - Aggiungere metriche cache
+* Monitoring - cache hit rate
+
+### File Analizzati
+
+* `backend/app/services/aggregation.py`
+* `backend/app/services/cached_aggregation.py`
+* `backend/app/services/cache.py`
+* `backend/app/models/search.py`
+* `backend/tests/test_cache.py`
+* `backend/tests/test_search.py`
+* `backend/app/services/__init__.py`
+
+### File Creati
+
+* Nessuno
+
+### File Modificati
+
+* `backend/app/services/aggregation.py`
+* `backend/app/services/cached_aggregation.py`
+* `backend/tests/test_cache.py`
+* `backend/tests/test_search.py`
+* `backend/README.md`
+* `PROGRESS.md`
+
+### File Eliminati
+
+* Nessuno
+
+### Implementazione
+
+Esteso `AggregationMetrics` con `cache_hit_count`, `cache_miss_count` e `cache_error_count`. `CachedAggregationService` annota ogni risposta senza mutare la risposta memorizzata: un hit evita i provider, un miss continua l'aggregazione e gli errori di lettura o scrittura restano fail-open. Un errore di lettura non viene classificato anche come miss, mentre un errore di scrittura conserva il miss gia osservato.
+
+### Test Eseguiti
+
+* `uvx poetry run pytest tests/test_cache.py tests/test_search.py tests/test_app.py tests/test_health.py -q` - superato, 26 test
+* `uvx poetry run ruff check . --no-cache` - superato
+* `uvx poetry run ruff format --check . --no-cache` - inizialmente non superato su 2 file, poi corretti con Ruff
+* `uvx poetry run pytest tests/test_cache.py tests/test_aggregation.py tests/test_search.py tests/test_app.py tests/test_health.py -q` - 39 test superati e 2 test preesistenti di aggregazione non superati per timestamp/ordinamento dinamici
+* `docker compose config --quiet` - non eseguito: comando Docker non disponibile nel sistema host
+
+### Stato Finale
+
+```text
+DA VERIFICARE
+```
+
+### Problemi Rilevati
+
+```text
+Le metriche sono applicative e per singola risposta; non sono ancora contatori Prometheus cumulativi. La suite estesa presenta due test preesistenti sensibili a timestamp e ordinamento dinamici. Docker non e installato o non e disponibile nel PATH dell'host.
+```
+
+### Prossimo Passo
+
+```text
+Definire la configurazione SQLAlchemy asincrona e il contratto iniziale delle sessioni database.
 ```
 
 ---

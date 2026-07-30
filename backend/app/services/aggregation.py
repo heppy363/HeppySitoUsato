@@ -83,6 +83,9 @@ class AggregationMetrics(BaseModel):
     normalized_result_count: int = Field(default=0, ge=0)
     filtered_result_count: int = Field(default=0, ge=0)
     final_result_count: int = Field(default=0, ge=0)
+    cache_hit_count: int = Field(default=0, ge=0)
+    cache_miss_count: int = Field(default=0, ge=0)
+    cache_error_count: int = Field(default=0, ge=0)
     duration_ms: float = Field(default=0.0, ge=0.0)
 
     model_config = ConfigDict(extra="forbid", frozen=True)

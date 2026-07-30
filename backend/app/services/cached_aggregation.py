@@ -43,13 +43,20 @@ class CachedAggregationService(AggregationService):
         return self._aggregation_service.select_providers(request)
 
     async def search(self, request: AggregationRequest) -> AggregationResponse:
+        cache_error_count = 0
+        cache_lookup_failed = False
         try:
             cached_response = await self._search_cache.get(request)
         except SearchCacheError:
             cached_response = None
+            cache_error_count = 1
+            cache_lookup_failed = True
 
         if cached_response is not None:
-            return cached_response
+            return self._with_cache_metrics(
+                cached_response,
+                hit_count=1,
+            )
 
         response = await self._aggregation_service.search(request)
 
@@ -60,6 +67,27 @@ class CachedAggregationService(AggregationService):
                 ttl_seconds=self._ttl_seconds,
             )
         except SearchCacheError:
-            pass
+            cache_error_count += 1
 
-        return response
+        return self._with_cache_metrics(
+            response,
+            miss_count=0 if cache_lookup_failed else 1,
+            error_count=cache_error_count,
+        )
+
+    @staticmethod
+    def _with_cache_metrics(
+        response: AggregationResponse,
+        *,
+        hit_count: int = 0,
+        miss_count: int = 0,
+        error_count: int = 0,
+    ) -> AggregationResponse:
+        metrics = response.metrics.model_copy(
+            update={
+                "cache_hit_count": hit_count,
+                "cache_miss_count": miss_count,
+                "cache_error_count": error_count,
+            }
+        )
+        return response.model_copy(update={"metrics": metrics})

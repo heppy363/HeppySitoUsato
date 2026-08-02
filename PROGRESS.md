@@ -113,7 +113,7 @@ Implementazione di PostgreSQL e migrazioni
 ## Percentuale Indicativa
 
 ```text
-81%
+83%
 ```
 
 La percentuale è indicativa e non deve essere calcolata esclusivamente sul numero di file creati.
@@ -123,15 +123,15 @@ Deve riflettere il completamento reale delle macro aree previste nella roadmap.
 ## Ultimo Aggiornamento
 
 ```text
-Data: 2026-07-30
+Data: 2026-08-02
 Responsabile: Codex
-Attivita: Configurazione SQLAlchemy asincrona e contratto iniziale delle sessioni database
+Attivita: Aggiunta dei test di integrazione Docker-gated per database e Alembic
 ```
 
 ## Prossimo Passo Approvato
 
 ```text
-Configurare Alembic asincrono sopra il metadata SQLAlchemy iniziale, senza creare tabelle applicative premature.
+Eseguire i test di integrazione Docker con daemon attivo per chiudere la verifica live di PostgreSQL/Alembic e poi pianificare la prima migrazione reale solo insieme al primo modello persistente.
 ```
 
 Codex non deve iniziare automaticamente attività successive oltre il prossimo passo approvato.
@@ -148,7 +148,7 @@ Codex non deve iniziare automaticamente attività successive oltre il prossimo p
 | Marketplace Provider    | IN SVILUPPO  |         72% | Contratto comune, `ProviderRegistry` runtime, `EbayProvider` con factory runtime, adapter mockato, adapter Browse API ufficiale e test presenti; verifica live ancora assente |
 | Aggregation Engine      | IN SVILUPPO  |         83% | Contratto registry-backed presente con selezione provider, `asyncio.gather`, isolamento dei fallimenti, raccolta di risultati parziali, deduplicazione per `(platform, external_id)`, primo merge conservativo, ranking euristico iniziale, primi filtri prezzo, ordinamento finale deterministico, primo ordinamento configurabile (`relevance`, `price_asc`) e prime metriche applicative della risposta aggregata |
 | Cache Redis             | IN SVILUPPO  |         88% | Cache Redis condivisa integrata nel lifecycle e nell'aggregazione con hit, miss, TTL, fail-open e metriche applicative per hit, miss ed errori |
-| PostgreSQL e Migrazioni | IN SVILUPPO  |         35% | SQLAlchemy asincrono, asyncpg, engine e session factory condivisi presenti; Alembic e verifica live restano da completare |
+| PostgreSQL e Migrazioni | IN SVILUPPO  |         60% | SQLAlchemy asincrono, asyncpg, engine e session factory condivisi presenti; metadata ORM condiviso, struttura Alembic asincrona e test di integrazione Docker-gated presenti, ma prima migrazione e verifica live completata restano da chiudere |
 | Worker e Code           | NON INIZIATO |          0% | Solo placeholder Docker, tecnologia non selezionata |
 | API FastAPI             | IN SVILUPPO  |         62% | Endpoint `GET /health` presente; `GET /search` disponibile con query model, filtri prezzo, piattaforme, parametro `sort`, rate limiting dedicato in-memory, error response tipizzate e OpenAPI verificata |
 | Streaming Risultati     | NON INIZIATO |          0% | SSE o WebSocket non definiti      |
@@ -156,7 +156,7 @@ Codex non deve iniziare automaticamente attività successive oltre il prossimo p
 | State Management        | IN SVILUPPO  |         15% | Pinia configurato con store iniziale |
 | Server State            | IN SVILUPPO  |         15% | TanStack Query configurato con query client base |
 | Interfaccia Grafica     | IN SVILUPPO  |         10% | Shell UI iniziale presente, feature di ricerca assenti |
-| Testing                 | IN SVILUPPO  |         87% | Test backend, network layer, lifecycle applicativo, sessioni database, `ProviderRegistry`, aggregazione parallela con errore parziale, deduplicazione, merge iniziale, ranking euristico, filtri prezzo, ordinamento finale, primo ordinamento configurabile, metriche iniziali, health endpoint, search endpoint, OpenAPI e validazione modelli con primo provider concreto e adapter ufficiale presenti |
+| Testing                 | IN SVILUPPO  |         90% | Test backend, network layer, lifecycle applicativo, sessioni database, configurazione Alembic, test di integrazione Docker-gated per PostgreSQL/Alembic, `ProviderRegistry`, aggregazione parallela con errore parziale, deduplicazione, merge iniziale, ranking euristico, filtri prezzo, ordinamento finale, primo ordinamento configurabile, metriche iniziali, health endpoint, search endpoint, OpenAPI e validazione modelli con primo provider concreto e adapter ufficiale presenti |
 | Monitoring              | IN SVILUPPO  |         15% | Servizi base presenti; prime metriche applicative dell'Aggregation Engine disponibili nella response, ma endpoint e dashboard restano da implementare |
 | Sicurezza               | IN SVILUPPO  |         15% | Validazione input e rate limiting per client di `GET /search` presenti; restano i controlli trasversali |
 | Documentazione          | IN SVILUPPO  |         99% | Documenti principali verificati, variabili eBay documentate e progresso aggiornato |
@@ -606,11 +606,11 @@ TTL previsto: 300 secondi
 * [ ] Configurare PostgreSQL 16
 * [x] Configurare SQLAlchemy 2.x
 * [x] Configurare sessioni asincrone
-* [ ] Configurare Alembic
+* [x] Configurare Alembic
 * [ ] Definire prima migrazione
 * [x] Configurare healthcheck
 * [x] Gestire connessioni
-* [ ] Aggiungere test di integrazione
+* [x] Aggiungere test di integrazione
 
 ## Modelli Futuri
 
@@ -629,7 +629,7 @@ Non devono essere create tabelle inutilizzate anticipatamente.
 
 # 14. Worker e Queue
 
-**Stato:** `NON INIZIATO`
+**Stato:** `IN SVILUPPO`
 
 ## Tecnologia da Selezionare
 
@@ -782,15 +782,15 @@ GET /search/stream
 
 ## Backend
 
-* [ ] `pytest`
-* [ ] `pytest-asyncio`
-* [ ] Test unitari
-* [ ] Test di integrazione
+* [x] `pytest`
+* [x] `pytest-asyncio`
+* [x] Test unitari
+* [x] Test di integrazione
 * [ ] Mock HTTP
 * [ ] Fixture provider
-* [ ] Test cache
-* [ ] Test database
-* [ ] Test API
+* [x] Test cache
+* [x] Test database
+* [x] Test API
 * [ ] Test worker
 * [ ] Test errori
 * [ ] Coverage configurata
@@ -933,7 +933,7 @@ Questa tabella deve collegare ogni requisito ai file reali che lo implementano.
 | REQ-008 | Aggregazione concorrente        | OBIETTIVI_E_ROADMAP.md | `backend/app/services/aggregation.py`, `backend/app/providers/registry.py`, `backend/app/main.py` | `backend/tests/test_app.py`, `backend/tests/test_aggregation.py` | IN SVILUPPO  |
 | REQ-009 | Ranking risultati               | ARCHITETTURA.md        | `backend/app/services/ranking.py`, `backend/app/services/aggregation.py` | `backend/tests/test_aggregation.py` | IN SVILUPPO  |
 | REQ-010 | Redis cache                     | STACK_E_TECNOLOGIE.md  | `backend/app/services/cache.py`, `backend/app/services/cached_aggregation.py`, `backend/app/main.py`, `backend/app/core/config.py`, `.env.example`, `docker-compose.yml` | `backend/tests/test_cache.py`, `backend/tests/test_app.py`, `backend/tests/test_search.py` | IN SVILUPPO |
-| REQ-011 | PostgreSQL e Alembic            | STACK_E_TECNOLOGIE.md  | Non presente         | Non presente    | NON INIZIATO |
+| REQ-011 | PostgreSQL e Alembic            | STACK_E_TECNOLOGIE.md  | `backend/app/database/base.py`, `backend/app/database/config.py`, `backend/app/database/migrations.py`, `backend/app/database/session.py`, `backend/alembic.ini`, `backend/migrations/env.py` | `backend/tests/test_alembic.py`, `backend/tests/test_database.py`, `backend/tests/test_database_integration.py`, `backend/tests/test_health.py`, `backend/tests/test_app.py`, `backend/tests/support/live_database_probe.py` | IN SVILUPPO |
 | REQ-012 | Worker asincrono                | OBIETTIVI_E_ROADMAP.md | Non presente         | Non presente    | NON INIZIATO |
 | REQ-013 | Endpoint `/health`              | OBIETTIVI_E_ROADMAP.md | `backend/app/api/router.py`, `backend/app/models/health.py`, `backend/app/services/health.py`, `backend/app/main.py` | `backend/tests/test_app.py`, `backend/tests/test_health.py` | COMPLETATO |
 | REQ-014 | Endpoint `/search`              | OBIETTIVI_E_ROADMAP.md | `backend/app/api/router.py`, `backend/app/models/search.py`, `backend/app/models/__init__.py`, `backend/app/services/aggregation.py`, `backend/app/services/__init__.py` | `backend/tests/test_search.py`, `backend/tests/test_aggregation.py` | IN SVILUPPO  |
@@ -1098,7 +1098,7 @@ Nessuna deviazione registrata.
 | ISSUE-004 | Strategia proxy di produzione non definita       | MEDIA   | Network    | APERTO | Definire `ProxyProvider` e integrarlo nel client condiviso |
 | ISSUE-005 | Daemon Docker locale non disponibile per `compose up` | MEDIA   | DevOps     | APERTO | Ripetere il test con Docker Desktop attivo |
 | ISSUE-006 | `pytest` backend bloccato in fase di collection nell'ambiente locale | MEDIA   | Testing    | RISOLTO | Disabilitato `cacheprovider` e stabilizzato il path dei test con `conftest.py` |
-| ISSUE-007 | La connessione database e verificata tramite mock, ma non ancora contro un servizio PostgreSQL 16 live | MEDIA   | Database   | APERTO | Eseguire i test di integrazione quando Docker/PostgreSQL saranno disponibili |
+| ISSUE-007 | I test di integrazione live per PostgreSQL/Alembic sono presenti, ma in questo ambiente vengono saltati per daemon Docker non attivo | MEDIA   | Database   | APERTO | Rieseguire i test con Docker Desktop attivo e registrare l'esito live |
 | ISSUE-008 | Due test di aggregazione dipendono da `collected_at` generato dinamicamente e falliscono in modo deterministico nell'ambiente corrente | BASSA | Testing | APERTO | Stabilizzare i timestamp delle fixture in una micro-modifica dedicata |
 
 ---
@@ -3901,6 +3901,172 @@ La connessione a PostgreSQL 16 non e stata verificata live. La suite completa co
 
 ```text
 Configurare Alembic asincrono sopra il metadata SQLAlchemy iniziale, senza creare tabelle applicative premature.
+```
+
+---
+
+## 2026-08-02 - Configurazione Alembic asincrona e metadata ORM condiviso
+
+### Obiettivo
+
+Configurare Alembic in modalita asincrona sopra il layer SQLAlchemy esistente, predisponendo metadata e struttura di migrazione senza introdurre tabelle applicative premature.
+
+### Requisiti Coinvolti
+
+* PostgreSQL e Alembic - Configurare Alembic
+* PostgreSQL e Alembic - Configurare SQLAlchemy 2.x
+* PostgreSQL e Alembic - Configurare sessioni asincrone
+* PostgreSQL e Alembic - Gestire connessioni
+
+### File Analizzati
+
+* `ARCHITETTURA.md`
+* `CODEX_WORKFLOW.md`
+* `OBIETTIVI_E_ROADMAP.md`
+* `PROGRESS.md`
+* `RUOLI_E_STANDARD.md`
+* `STACK_E_TECNOLOGIE.md`
+* `backend/README.md`
+* `backend/pyproject.toml`
+* `backend/app/core/config.py`
+* `backend/app/database/__init__.py`
+* `backend/app/database/config.py`
+* `backend/app/database/session.py`
+* `backend/app/main.py`
+* `backend/tests/test_app.py`
+* `backend/tests/test_database.py`
+* `backend/tests/test_health.py`
+* `.env.example`
+* `docker-compose.yml`
+
+### File Creati
+
+* `backend/alembic.ini`
+* `backend/app/database/base.py`
+* `backend/app/database/migrations.py`
+* `backend/migrations/env.py`
+* `backend/migrations/script.py.mako`
+* `backend/migrations/versions/.gitkeep`
+* `backend/tests/test_alembic.py`
+
+### File Modificati
+
+* `backend/app/database/__init__.py`
+* `backend/README.md`
+* `PROGRESS.md`
+
+### File Eliminati
+
+* Nessuno
+
+### Implementazione
+
+Introdotto un metadata ORM condiviso con naming convention stabile e una `Base` SQLAlchemy dedicata al layer database. Aggiunta la configurazione Alembic con `alembic.ini`, environment asincrono basato sullo stesso `BACKEND_DATABASE_URL` delle settings applicative, helper centralizzato per esporre URL e `target_metadata`, template di revisione e directory `versions/` pronta per le future migrazioni. Aggiunti test mirati per il metadata condiviso, la configurazione della URL Alembic e la registrazione dello script directory.
+
+### Test Eseguiti
+
+* `poetry install --no-interaction` - superato, ha installato `asyncpg 0.31.0` nel virtualenv locale allineandolo al lockfile
+* `poetry check` - superato
+* `poetry run pytest tests/test_alembic.py tests/test_database.py tests/test_health.py tests/test_app.py -q` - superato, 15 test
+* `poetry run ruff check . --no-cache` - superato
+* `poetry run ruff format --check . --no-cache` - superato
+* `poetry run python -c "import asyncpg; print(asyncpg.__version__)"` - superato, `0.31.0`
+* `poetry run alembic heads` - superato
+* `docker compose config` - superato con warning non bloccanti sulla lettura di `C:\Users\heppy\.docker\config.json`
+
+### Stato Finale
+
+```text
+DA VERIFICARE
+```
+
+### Problemi Rilevati
+
+```text
+La prima migrazione Alembic non e stata definita per evitare tabelle applicative premature. La verifica live contro PostgreSQL 16 non e stata eseguita; resta inoltre un warning ambientale non bloccante sulla lettura di `C:\Users\heppy\.docker\config.json` durante `docker compose config`.
+```
+
+### Prossimo Passo
+
+```text
+Aggiungere test di integrazione del layer database e di Alembic contro PostgreSQL 16 via Docker, senza introdurre ancora tabelle applicative premature.
+```
+
+---
+
+## 2026-08-02 - Test di integrazione Docker-gated per database e Alembic
+
+### Obiettivo
+
+Aggiungere test di integrazione del layer database e di Alembic contro PostgreSQL 16 via Docker, senza introdurre tabelle applicative premature e senza introdurre dipendenze nuove.
+
+### Requisiti Coinvolti
+
+* PostgreSQL e Alembic - Aggiungere test di integrazione
+* PostgreSQL e Alembic - Gestire connessioni
+* PostgreSQL e Alembic - Configurare Alembic
+* Qualita - Test di integrazione
+
+### File Analizzati
+
+* `ARCHITETTURA.md`
+* `CODEX_WORKFLOW.md`
+* `OBIETTIVI_E_ROADMAP.md`
+* `PROGRESS.md`
+* `RUOLI_E_STANDARD.md`
+* `STACK_E_TECNOLOGIE.md`
+* `backend/README.md`
+* `backend/alembic.ini`
+* `backend/app/database/migrations.py`
+* `backend/migrations/env.py`
+* `backend/tests/conftest.py`
+* `backend/tests/test_database.py`
+* `docker/backend/Dockerfile`
+* `docker-compose.yml`
+
+### File Creati
+
+* `backend/tests/support/live_database_probe.py`
+* `backend/tests/test_database_integration.py`
+
+### File Modificati
+
+* `backend/README.md`
+* `PROGRESS.md`
+
+### File Eliminati
+
+* Nessuno
+
+### Implementazione
+
+Aggiunti test di integrazione Docker-gated che orchestrano un progetto `docker compose` isolato e riusano il servizio `postgres` esistente senza esporre nuove porte. Introdotto un piccolo probe Python riutilizzabile per eseguire da container la verifica live di `DatabaseSessionManager.check_connection()` e l'ispezione delle tabelle pubbliche. I test verificano il wiring reale di database e Alembic via container backend e, quando il daemon Docker non e disponibile, vengono saltati con una motivazione esplicita invece di fallire in modo ambiguo.
+
+### Test Eseguiti
+
+* `poetry check` - superato
+* `poetry run pytest tests/test_alembic.py tests/test_database.py tests/test_database_integration.py -q` - superato, 7 test e 2 skip
+* `RUN_DOCKER_INTEGRATION_TESTS=1 poetry run pytest tests/test_database_integration.py -q` - superato con 2 skip per daemon Docker non disponibile nell'ambiente corrente
+* `poetry run ruff check . --no-cache` - superato
+* `poetry run ruff format --check . --no-cache` - superato
+* `DOCKER_CONFIG=.docker-tmp docker compose config` - superato
+
+### Stato Finale
+
+```text
+DA VERIFICARE
+```
+
+### Problemi Rilevati
+
+```text
+I test di integrazione live sono presenti ma in questo ambiente non possono completare l'esecuzione contro PostgreSQL 16 perche il daemon Docker non e attivo. La prima migrazione Alembic resta volutamente assente per evitare tabelle applicative premature.
+```
+
+### Prossimo Passo
+
+```text
+Eseguire i test di integrazione Docker con Docker Desktop attivo per chiudere la verifica live di PostgreSQL/Alembic e poi pianificare la prima migrazione reale solo insieme al primo modello persistente.
 ```
 
 ---

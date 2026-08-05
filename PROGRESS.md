@@ -123,9 +123,9 @@ Deve riflettere il completamento reale delle macro aree previste nella roadmap.
 ## Ultimo Aggiornamento
 
 ```text
-Data: 2026-08-02
+Data: 2026-08-03
 Responsabile: Codex
-Attivita: Aggiunta dei test di integrazione Docker-gated per database e Alembic
+Attivita: Nuovo tentativo di verifica live PostgreSQL/Alembic, saltato per Docker non disponibile
 ```
 
 ## Prossimo Passo Approvato
@@ -4067,6 +4067,52 @@ I test di integrazione live sono presenti ma in questo ambiente non possono comp
 
 ```text
 Eseguire i test di integrazione Docker con Docker Desktop attivo per chiudere la verifica live di PostgreSQL/Alembic e poi pianificare la prima migrazione reale solo insieme al primo modello persistente.
+```
+
+---
+
+## 2026-08-03 - Nuovo tentativo di verifica live PostgreSQL/Alembic
+
+### Obiettivo
+
+Eseguire il passo approvato di verifica live dei test di integrazione PostgreSQL 16 e Alembic tramite Docker.
+
+### File Analizzati
+
+* tutti i file Markdown presenti nel progetto;
+* `backend/tests/test_database_integration.py`;
+* `backend/tests/support/live_database_probe.py`;
+* `backend/pyproject.toml`;
+* `docker-compose.yml`.
+
+### File Modificati
+
+* `PROGRESS.md`
+
+### Implementazione
+
+Nessuna modifica applicativa o infrastrutturale. Il test Docker-gated esistente e stato avviato tramite il virtualenv Poetry gia presente, senza aggiungere dipendenze e senza introdurre modelli o migrazioni premature.
+
+### Test Eseguiti
+
+* `RUN_DOCKER_INTEGRATION_TESTS=1 pytest tests/test_database_integration.py -q` tramite l'eseguibile `pytest` del virtualenv Poetry - eseguito con esito `2 skipped` per Docker CLI/daemon non disponibile
+
+### Stato Finale
+
+```text
+DA VERIFICARE
+```
+
+### Problemi Rilevati
+
+```text
+`poetry` e `docker` non sono disponibili nel PATH della sessione. Il virtualenv Poetry esistente ha consentito di avviare pytest, ma l'assenza di Docker impedisce la verifica live contro PostgreSQL 16 e Alembic.
+```
+
+### Prossimo Passo
+
+```text
+Eseguire i test di integrazione Docker con Docker Desktop o un daemon equivalente attivo per chiudere la verifica live di PostgreSQL/Alembic e poi pianificare la prima migrazione reale solo insieme al primo modello persistente.
 ```
 
 ---
